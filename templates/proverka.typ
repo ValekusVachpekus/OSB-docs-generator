@@ -1,6 +1,6 @@
 #set text(font: ("Liberation Serif", "DejaVu Serif"), size: 12pt, lang: "ru")
 #set page(
-  margin: (top: 2cm, bottom: 2cm, left: 3cm, right: 1.5cm),
+  margin: (top: 2cm, bottom: 2cm, left: 2cm, right: 1cm),
   fill: rgb("FBFBFB"),
   background: {
     let grain_tile = tiling(size: (0.4mm, 0.4mm))[
@@ -87,6 +87,7 @@
 #let v-vruch-fio = "Иванов Иван Иванович"
 #let v-has-gerb = true
 #let v-has-sign = true
+#let v-show-copy = true
 #let v-sign-width = 25mm
 #let v-show-bottom-sign = true
 #let v-show-sogl-osb = true
@@ -99,7 +100,7 @@
   #if v-has-gerb [#block(width: 1.5cm)[#image("/gerb.svg")]]
   #v(0.2em)
   #set text(size: 10pt)
-  #upper[Министерство внутренних дел Российской Федерации] \
+  #upper[Министерство внутренних дел] \
   #set text(size: 11pt, weight: "bold")
   ОТДЕЛ СОБСТВЕННОЙ БЕЗОПАСНОСТИ ГУ МВД \ ПО НИЖЕГОРОДСКОЙ ОБЛАСТИ
 
@@ -131,6 +132,7 @@
   ],
   rotate(-1.5deg)[
     #move(dx: 5pt, dy: -10pt)[
+      #if v-show-copy [
       #rect(
         width: 100%,
         inset: 6pt,
@@ -162,6 +164,7 @@
           )
         ]
       )
+      ]
     ]
   ]
 )

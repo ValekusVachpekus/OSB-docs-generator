@@ -28,7 +28,7 @@ const DATA_KEYS = {
     'v-sogl-osb-post','v-sogl-osb-rank','v-sogl-osb-day','v-sogl-osb-month-gen','v-sogl-osb-year','v-sogl-osb-sign','v-sogl-osb-fio',
     'v-sogl-gu-post','v-sogl-gu-rank','v-sogl-gu-day','v-sogl-gu-month-gen','v-sogl-gu-year','v-sogl-gu-sign','v-sogl-gu-fio',
     'v-vruch-day','v-vruch-month-gen','v-vruch-year','v-vruch-time','v-vruch-sign','v-vruch-fio',
-    'v-has-gerb','v-has-sign','v-sign-width','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch'],
+    'v-has-gerb','v-has-sign','v-sign-width','v-show-copy','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch'],
   otstranenie: ['v-day','v-month-gen','v-month-num','v-year','v-city','v-num','v-subject','v-subject-gen',
     'v-officer-rank-full','v-ustav-article','v-check-num',
     'v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
@@ -39,17 +39,17 @@ const DATA_KEYS = {
   unsp: ['v-date-dots','v-doc-num','v-show-reply','v-reply-num','v-reply-date',
     'v-addr-post','v-addr-rank','v-addr-fio','v-appeal','v-greet-fio',
     'v-points','v-check-start','v-postan-date',
-    'v-sign-post','v-sign-rank','v-officer-short','v-officer-phone',
+    'v-sign-post','v-sign-rank','v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
     'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
-    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-sign','v-show-seal',
+    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-copy','v-show-sign','v-show-seal',
     'v-show-poluch','v-poluch-day','v-poluch-month-gen','v-poluch-year','v-poluch-time','v-poluch-sign','v-poluch-fio'],
   uksp: ['v-date-dots','v-doc-num','v-show-reply','v-reply-num','v-reply-date',
     'v-addr-post','v-addr-rank','v-addr-fio','v-appeal','v-greet-fio',
     'v-what','v-check-start','v-check-end','v-postan-date',
     'v-fact-word','v-decision-word','v-est-date','v-est-text','v-has-penalty','v-penalty',
-    'v-sign-post','v-sign-rank','v-officer-short','v-officer-phone',
+    'v-sign-post','v-sign-rank','v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
     'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
-    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-sign','v-show-seal',
+    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-copy','v-show-sign','v-show-seal',
     'v-show-poluch','v-poluch-day','v-poluch-month-gen','v-poluch-year','v-poluch-time','v-poluch-sign','v-poluch-fio'],
 };
 
@@ -68,6 +68,7 @@ const DEFAULT_PROFILE = {
 };
 const STAMPS_DEF = {
   show_bottom_sign: true,
+  show_copy: true,
   show_sogl_osb: true, sogl_osb_date: '2026-04-12',
   show_sogl_gu: true, sogl_gu_date: '2026-04-12',
   show_vruch: true, vruch_date: '2026-04-12', vruch_time: '00:00',
@@ -123,7 +124,7 @@ const DEFAULT_DOCS = {
     addr_fio: 'Иванову Ивану Ивановичу', appeal: 'Уважаемый',
     greet_fio: 'Иванов Иван Иванович',
     points: 'п. 3.2, 4.3 ВУ', check_start: '2026-10-01', postan_date: '2026-10-01',
-    show_sign: true, show_seal: true,
+    show_sign: true, show_seal: true, show_copy: true,
     show_poluch: true, poluch_date: '2026-10-01', poluch_time: '00:00' },
   uksp: { date: '2026-10-15', doc_num: '0031-СП', reply_num: '', reply_date: '',
     addr_post: 'Инспектору СР ДПС', addr_rank: 'Лейтенанту полиции',
@@ -134,7 +135,7 @@ const DEFAULT_DOCS = {
     fact: 'yes', est_date: '2026-10-15',
     est_text: 'сотрудником допущено нарушение служебной дисциплины',
     penalty: 'выговоре',
-    show_sign: true, show_seal: true,
+    show_sign: true, show_seal: true, show_copy: true,
     show_poluch: true, poluch_date: '2026-10-15', poluch_time: '00:00' },
 };
 
@@ -236,6 +237,7 @@ const DOC_SCHEMAS = {
       { k: 'notify_fio', label: 'Кого уведомить', type: 'text', req: 1 },
     ]},
     { title: 'Печати и штампы', fields: [
+      { k: 'show_copy', label: 'Поставить штамп «Копия верна»', type: 'check' },
       { k: 'show_bottom_sign', label: 'Поставить свою подпись внизу', type: 'check' },
       ...stampFields('sogl_osb', 'Согласовано ОСБ'),
       ...stampFields('sogl_gu', 'Согласовано ГУ'),
@@ -291,6 +293,7 @@ const DOC_SCHEMAS = {
       { k: 'postan_date', label: 'Постановление от', type: 'date', req: 1 },
     ]},
     { title: 'Подпись и печать', fields: [
+      { k: 'show_copy', label: 'Поставить штамп «Копия верна»', type: 'check' },
       { k: 'show_sign', label: 'Поставить подпись', type: 'check',
         sub: 'Должность — из постоянных данных' },
       { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
@@ -335,6 +338,7 @@ const DOC_SCHEMAS = {
         sub: 'Например: выговоре. Пустое поле — пункт 2 не печатается' },
     ]},
     { title: 'Подпись и печать', fields: [
+      { k: 'show_copy', label: 'Поставить штамп «Копия верна»', type: 'check' },
       { k: 'show_sign', label: 'Поставить подпись', type: 'check',
         sub: 'Должность и звание — из постоянных данных' },
       { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
@@ -848,6 +852,7 @@ function buildData() {
   D['v-has-sign'] = !!signBytes();
   D['v-sign-width'] = `${+p.sign_width || 25}mm`;
   D['v-show-bottom-sign'] = !!d.show_bottom_sign;
+  D['v-show-copy'] = !!d.show_copy;
   D['v-show-sogl-osb'] = !!d.show_sogl_osb;
   D['v-show-sogl-gu'] = !!d.show_sogl_gu;
   D['v-show-vruch'] = !!d.show_vruch;

@@ -1,6 +1,6 @@
 #set text(font: ("Liberation Serif", "DejaVu Serif"), size: 12pt, lang: "ru")
 #set page(
-  margin: (top: 2cm, bottom: 2cm, left: 2cm, right: 1.5cm),
+  margin: (top: 2cm, bottom: 2cm, left: 2cm, right: 1cm),
   fill: rgb("FBFBFB"),
   background: {
     let grain_tile = tiling(size: (0.4mm, 0.4mm))[
@@ -68,8 +68,12 @@
 #let v-postan-date = "01.10.2026"
 #let v-sign-post = "Заместитель начальника отдела собственной безопасности Управления ГАИ"
 #let v-sign-rank = "лейтенант полиции"
+#let v-officer-post = "Заместитель начальника отдела собственной безопасности ГУ МВД"
+#let v-officer-rank = "майор полиции"
+#let v-officer-full = "Щетков Владислав Алексеевич"
 #let v-officer-short = "В.А. Щетков"
 #let v-officer-phone = "5-6-5"
+#let v-show-copy = true
 #let v-seal-l1 = "ОТДЕЛ"
 #let v-seal-l2 = "СОБСТВЕННОЙ"
 #let v-seal-l3 = "БЕЗОПАСНОСТИ"
@@ -115,7 +119,39 @@
     #v(3em)
     #v-addr-post \
     #v-addr-rank \
-    #v-addr-fio
+    #v-addr-fio \
+    #v(1em)
+    #if v-show-copy [
+      #rotate(-1.5deg)[
+        #rect(
+          width: 100%,
+          inset: 6pt,
+          stroke: 0.7pt + blue.darken(20%),
+          fill: white.transparentize(40%),
+          [
+            #set align(left)
+            #set text(size: 7.5pt, fill: blue.darken(30%))
+            #align(center)[#text(size: 10pt, weight: "bold")[КОПИЯ ВЕРНА]]
+            #v(4pt)
+            #v-officer-post, #v-officer-rank #v-officer-full
+
+            #v(8pt)
+            #grid(
+              columns: (1fr, 1.2fr),
+              align(bottom)[#v-date-dots],
+              align(bottom + right)[
+                #if v-has-sign [
+                  #block(width: 1.2cm)[#image("/sign.png")]
+                  #v-officer-short
+                ] else [
+                  #v-officer-short
+                ]
+              ]
+            )
+          ]
+        )
+      ]
+    ]
   ]
 )
 
