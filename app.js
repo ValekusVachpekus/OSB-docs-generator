@@ -9,7 +9,7 @@ const RANKS = ['рядовой полиции','младший сержант п
 const LS_PROFILE = 'osb_profile_v1';
 const LS_TEMPLATE = 'osb_template_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование', proverka: 'Проверка', otstranenie: 'Отстранение' };
+const TPL_NAMES = { trebovanie: 'Требование', proverka: 'Проверка', otstranenie: 'Отстранение', unsp: 'Уведомление (УНСП)' };
 const LIBERATION_FONTS = ['Regular', 'Bold', 'Italic', 'BoldItalic'];
 
 /* Ключи DATA-блока каждого шаблона — должны 1-в-1 совпадать с #let v-* в templates/*.typ.
@@ -36,6 +36,13 @@ const DATA_KEYS = {
     'v-sogl-gu-post','v-sogl-gu-rank','v-sogl-gu-day','v-sogl-gu-month-gen','v-sogl-gu-year','v-sogl-gu-sign','v-sogl-gu-fio',
     'v-vruch-day','v-vruch-month-gen','v-vruch-year','v-vruch-time','v-vruch-sign','v-vruch-fio',
     'v-has-gerb','v-has-sign','v-sign-width','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch'],
+  unsp: ['v-date-dots','v-doc-num','v-show-reply','v-reply-num','v-reply-date',
+    'v-addr-post','v-addr-rank','v-addr-fio','v-appeal','v-greet-fio',
+    'v-points','v-check-start','v-postan-date',
+    'v-sign-post','v-sign-rank','v-officer-short','v-officer-phone',
+    'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
+    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-sign','v-show-seal',
+    'v-show-poluch','v-poluch-day','v-poluch-month-gen','v-poluch-year','v-poluch-time','v-poluch-sign','v-poluch-fio'],
 };
 
 /* ---------- значения по умолчанию (пример заполнения) ---------- */
@@ -59,25 +66,25 @@ const STAMPS_DEF = {
 };
 /* Стандартный абзац блока «Установил» — добавляется ВСЕГДА в конец текста пользователя */
 const VIOLATION_TAIL = 'В соответствии с требованиями Федерального закона «О полиции» и внутреннего устава ОВД, а также в целях установления фактов, обстоятельств и причин возможного нарушения служебной дисциплины';
-/* Звания (именительный) -> родительный / творительный падеж, для автосборки формулировок проверки */
+/* Звания (именительный) -> родительный / творительный / дательный падеж */
 const RANK_FORMS = {
-  'рядовой полиции': ['рядового полиции', 'рядовым полиции'],
-  'младший сержант полиции': ['младшего сержанта полиции', 'младшим сержантом полиции'],
-  'сержант полиции': ['сержанта полиции', 'сержантом полиции'],
-  'старший сержант полиции': ['старшего сержанта полиции', 'старшим сержантом полиции'],
-  'старшина полиции': ['старшины полиции', 'старшиной полиции'],
-  'прапорщик полиции': ['прапорщика полиции', 'прапорщиком полиции'],
-  'старший прапорщик полиции': ['старшего прапорщика полиции', 'старшим прапорщиком полиции'],
-  'младший лейтенант полиции': ['младшего лейтенанта полиции', 'младшим лейтенантом полиции'],
-  'лейтенант полиции': ['лейтенанта полиции', 'лейтенантом полиции'],
-  'старший лейтенант полиции': ['старшего лейтенанта полиции', 'старшим лейтенантом полиции'],
-  'капитан полиции': ['капитана полиции', 'капитаном полиции'],
-  'майор полиции': ['майора полиции', 'майором полиции'],
-  'подполковник полиции': ['подполковника полиции', 'подполковником полиции'],
-  'полковник полиции': ['полковника полиции', 'полковником полиции'],
-  'генерал-майор полиции': ['генерал-майора полиции', 'генерал-майором полиции'],
-  'генерал-лейтенант полиции': ['генерал-лейтенанта полиции', 'генерал-лейтенантом полиции'],
-  'генерал-полковник полиции': ['генерал-полковника полиции', 'генерал-полковником полиции'],
+  'рядовой полиции': ['рядового полиции', 'рядовым полиции', 'рядовому полиции'],
+  'младший сержант полиции': ['младшего сержанта полиции', 'младшим сержантом полиции', 'младшему сержанту полиции'],
+  'сержант полиции': ['сержанта полиции', 'сержантом полиции', 'сержанту полиции'],
+  'старший сержант полиции': ['старшего сержанта полиции', 'старшим сержантом полиции', 'старшему сержанту полиции'],
+  'старшина полиции': ['старшины полиции', 'старшиной полиции', 'старшине полиции'],
+  'прапорщик полиции': ['прапорщика полиции', 'прапорщиком полиции', 'прапорщику полиции'],
+  'старший прапорщик полиции': ['старшего прапорщика полиции', 'старшим прапорщиком полиции', 'старшему прапорщику полиции'],
+  'младший лейтенант полиции': ['младшего лейтенанта полиции', 'младшим лейтенантом полиции', 'младшему лейтенанту полиции'],
+  'лейтенант полиции': ['лейтенанта полиции', 'лейтенантом полиции', 'лейтенанту полиции'],
+  'старший лейтенант полиции': ['старшего лейтенанта полиции', 'старшим лейтенантом полиции', 'старшему лейтенанту полиции'],
+  'капитан полиции': ['капитана полиции', 'капитаном полиции', 'капитану полиции'],
+  'майор полиции': ['майора полиции', 'майором полиции', 'майору полиции'],
+  'подполковник полиции': ['подполковника полиции', 'подполковником полиции', 'подполковнику полиции'],
+  'полковник полиции': ['полковника полиции', 'полковником полиции', 'полковнику полиции'],
+  'генерал-майор полиции': ['генерал-майора полиции', 'генерал-майором полиции', 'генерал-майору полиции'],
+  'генерал-лейтенант полиции': ['генерал-лейтенанта полиции', 'генерал-лейтенантом полиции', 'генерал-лейтенанту полиции'],
+  'генерал-полковник полиции': ['генерал-полковника полиции', 'генерал-полковником полиции', 'генерал-полковнику полиции'],
 };
 const RANK_LIST = Object.keys(RANK_FORMS);
 const DEFAULT_DOCS = {
@@ -91,6 +98,7 @@ const DEFAULT_DOCS = {
   proverka: { date: '2026-04-02', city: 'г. Арзамас', num: '33',
     subj_post_rod: 'сотрудника ОБ ДПС ГАИ', subj_rank: 'младший сержант полиции',
     subj_sex: 'm', subj_surname: 'Иванов', subj_initials: 'А.А.',
+    subj_name: 'Иван', subj_patr: 'Иванович',
     target_title: 'сотрудника ОБ ДПС ГАИ младшего сержанта полиции Иванова А.А.',
     supervision: 'Заместитель начальника отдела собственной безопасности ГУ МВД, майор полиции Щетков Владислав Алексеевич, в ходе проведения надзорной деятельности за младшим сержантом полиции Ивановым А.А.',
     violation: 'Выявлены признаки нарушения служебной дисциплины',
@@ -102,6 +110,13 @@ const DEFAULT_DOCS = {
     officer_rank_full: 'заместителем начальника ОСБ подполковником полиции Щетковым В.А.',
     ustav_article: '12', check_num: '33',
     ...structuredClone(STAMPS_DEF) },
+  unsp: { date: '2026-10-01', doc_num: '0028-СП', reply_num: '', reply_date: '',
+    addr_post: 'Инспектору СР ДПС', addr_rank: 'Лейтенанту полиции',
+    addr_fio: 'Иванову Ивану Ивановичу', appeal: 'Уважаемый',
+    greet_fio: 'Иванов Иван Иванович',
+    points: 'п. 3.2, 4.3 ВУ', check_start: '2026-10-01', postan_date: '2026-10-01',
+    show_sign: true, show_seal: true,
+    show_poluch: true, poluch_date: '2026-10-01', poluch_time: '00:00' },
 };
 
 /* ---------- схемы форм ---------- */
@@ -180,6 +195,8 @@ const DOC_SCHEMAS = {
         opts: [{ v: 'm', label: 'Муж.' }, { v: 'f', label: 'Жен.' }] },
       { k: 'subj_surname', label: 'Фамилия (именит. падеж)', type: 'text', req: 1 },
       { k: 'subj_initials', label: 'Инициалы', type: 'text', sub: 'Например: А.А.' },
+      { k: 'subj_name', label: 'Имя (именит. падеж)', type: 'text', sub: 'Нужно для автозаполнения уведомления' },
+      { k: 'subj_patr', label: 'Отчество (именит. падеж)', type: 'text', sub: 'Нужно для автозаполнения уведомления' },
       { k: '_recompose', type: 'action', fn: 'recompose', label: '⟳ Собрать формулировки',
         sub: '«В отношении», «за кем надзор», «кого отстранить/уведомить» соберутся из данных выше. Собранное можно править вручную.' },
     ]},
@@ -229,6 +246,43 @@ const DOC_SCHEMAS = {
         sub: 'Получивший подставится из данных сотрудника автоматически' },
     ]},
   ],
+  unsp: [
+    { title: 'Заполнение из постановления', fields: [
+      { k: '_fill_unsp', type: 'action', fn: 'fill_from_proverka', label: '⇪ Заполнить из постановления',
+        sub: 'Даты, звание, ФИО и обращение подставятся со вкладки «Проверка». Заполненное можно править.' },
+    ]},
+    { title: 'Получатель', fields: [
+      { k: 'addr_post', label: 'Должность (дат. падеж)', type: 'text', req: 1, sub: 'Например: Инспектору СР ДПС' },
+      { k: 'addr_rank', label: 'Звание (дат. падеж)', type: 'text', req: 1, sub: 'Например: Лейтенанту полиции' },
+      { k: 'addr_fio', label: 'ФИО (дат. падеж)', type: 'text', req: 1, sub: 'Например: Иванову Ивану Ивановичу' },
+      { k: 'appeal', label: 'Обращение', type: 'segmented',
+        opts: [{ v: 'Уважаемая', label: 'Уважаемая' }, { v: 'Уважаемый', label: 'Уважаемый' }] },
+      { k: 'greet_fio', label: 'ФИО для обращения (именит. падеж)', type: 'text', req: 1,
+        sub: 'Например: Иванов Иван Иванович' },
+    ]},
+    { title: 'Документ', fields: [
+      { k: 'date', label: 'Дата уведомления', type: 'date', req: 1 },
+      { k: 'doc_num', label: 'Номер уведомления', type: 'text', req: 1, sub: 'Например: 0028-СП' },
+      { k: 'reply_num', label: 'На № (ответ на входящий)', type: 'text' },
+      { k: 'reply_date', label: 'От (дата входящего)', type: 'date' },
+    ]},
+    { title: 'Проверка', fields: [
+      { k: 'points', label: 'Пункты нарушений', type: 'text', req: 1, sub: 'Например: п. 3.2, 4.3 ВУ' },
+      { k: 'check_start', label: 'Проверка проводится с', type: 'date', req: 1 },
+      { k: 'postan_date', label: 'Постановление от', type: 'date', req: 1 },
+    ]},
+    { title: 'Подпись и печать', fields: [
+      { k: 'show_sign', label: 'Поставить подпись', type: 'check',
+        sub: 'Должность — из постоянных данных' },
+      { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
+    ]},
+    { title: 'Отметка о получении', fields: [
+      { k: 'show_poluch', label: 'Поставить отметку о получении', type: 'check' },
+      { k: 'poluch_date', label: 'Дата получения', type: 'date', showIf: 'show_poluch' },
+      { k: 'poluch_time', label: 'Время получения', type: 'time', showIf: 'show_poluch',
+        sub: 'Получивший подставится из данных получателя автоматически' },
+    ]},
+  ],
 };
 
 /* ---------- состояние ---------- */
@@ -239,6 +293,7 @@ const state = {
     trebovanie: loadLS(LS_DRAFT('trebovanie'), structuredClone(DEFAULT_DOCS.trebovanie)),
     proverka: loadLS(LS_DRAFT('proverka'), structuredClone(DEFAULT_DOCS.proverka)),
     otstranenie: loadLS(LS_DRAFT('otstranenie'), structuredClone(DEFAULT_DOCS.otstranenie)),
+    unsp: loadLS(LS_DRAFT('unsp'), structuredClone(DEFAULT_DOCS.unsp)),
   },
 };
 if (!state.docs[state.template]) state.template = 'trebovanie';
@@ -279,6 +334,10 @@ function isoParts(iso) {
 function deadlineText(iso) {
   const p = isoParts(iso);
   return `${p.day} ${p.gen} ${p.year} года`;
+}
+function dotsDate(iso) {
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
+  return m ? `${m[3]}.${m[2]}.${m[1]}` : '';
 }
 function toShortFio(full) {
   const parts = String(full || '').trim().split(/\s+/);
@@ -327,10 +386,12 @@ function fieldNode(sec, f, values, onChange, scope) {
   if (f.type === 'segmented') {
     const seg = document.createElement('div');
     seg.className = 'segmented';
+    seg.dataset.fk = f.k;
     for (const o of f.opts) {
       const b = document.createElement('button');
       b.type = 'button';
       b.textContent = o.label;
+      b.dataset.v = o.v;
       b.setAttribute('aria-pressed', String(values[f.k] === o.v));
       b.onclick = () => {
         values[f.k] = o.v;
@@ -420,42 +481,97 @@ function fieldNode(sec, f, values, onChange, scope) {
 function markReq(inp, f) {
   if (f.req) inp.classList.toggle('invalid', !String(inp.value ?? '').trim());
 }
-/* Склонение фамилии: род. и твор. падеж. Неизвестные окончания — без изменений. */
+/* Склонение фамилии: род. / твор. / дат. падеж. Неизвестные окончания — без изменений. */
 function declSurname(s, sex = 'm') {
   s = String(s || '').trim();
-  if (!s) return { gen: s, tvor: s };
+  const none = { gen: s, tvor: s, dat: s };
+  if (!s) return none;
   const low = s.toLowerCase();
-  const rep = (re, gen, tvor) => {
+  const rep = (re, gen, tvor, dat) => {
     if (!re.test(low)) return null;
-    return { gen: s.replace(re, gen), tvor: s.replace(re, tvor) };
+    return { gen: s.replace(re, gen), tvor: s.replace(re, tvor), dat: s.replace(re, dat) };
   };
   let r;
   if (sex === 'f') {
-    r = rep(/(ов|ев|ёв|ин|ын)а$/, '$1ой', '$1ой')
-      || rep(/(ская|цкая|ая|яя)$/, 'ой', 'ой')
-      || rep(/([гкхжчшщ])а$/, '$1и', '$1ой')
-      || rep(/([а-я])а$/, '$1ы', '$1ой');
-    return r || { gen: s, tvor: s };
+    r = rep(/(ов|ев|ёв|ин|ын)а$/, '$1ой', '$1ой', '$1ой')
+      || rep(/(ская|цкая|ая|яя)$/, 'ой', 'ой', 'ой')
+      || rep(/([гкхжчшщ])а$/, '$1и', '$1ой', '$1е')
+      || rep(/([а-я])а$/, '$1ы', '$1ой', '$1е');
+    return r || none;
   }
-  r = rep(/(ов|ев|ёв|ин|ын)$/, '$1а', '$1ым')
-    || rep(/(ский|цкий)$/, 'ого', 'им')
-    || rep(/(ой|ый|ий)$/, 'ого', 'ым')
-    || rep(/ь$/, 'я', 'ем')
-    || rep(/([бвгджзклмнпрстфхцчшщ])$/, '$1а', '$1ом')
-    || rep(/([гкхжчшщ])а$/, '$1и', '$1ой')
-    || rep(/([а-я])а$/, '$1ы', '$1ой');
-  return r || { gen: s, tvor: s };
+  r = rep(/(ов|ев|ёв|ин|ын)$/, '$1а', '$1ым', '$1у')
+    || rep(/(ский|цкий)$/, 'ого', 'им', 'ому')
+    || rep(/(ой|ый|ий)$/, 'ого', 'ым', 'ому')
+    || rep(/ь$/, 'я', 'ем', 'ю')
+    || rep(/([бвгджзклмнпрстфхцчшщ])$/, '$1а', '$1ом', '$1у')
+    || rep(/([гкхжчшщ])а$/, '$1и', '$1ой', '$1е')
+    || rep(/([а-я])а$/, '$1ы', '$1ой', '$1е');
+  return r || none;
+}
+/* Имя в дательном падеже (для уведомления) */
+function declFirstDat(name, sex = 'm') {
+  const s = String(name || '').trim();
+  if (!s) return s;
+  const low = s.toLowerCase();
+  if (sex === 'f') {
+    if (/я$/.test(low)) return s.slice(0, -1) + 'и';
+    if (/ь$/.test(low)) return s.slice(0, -1) + 'и';
+    if (/а$/.test(low)) return s.slice(0, -1) + 'е';
+    return s;
+  }
+  if (/й$/.test(low)) return s.slice(0, -1) + 'ю';
+  if (/ь$/.test(low)) return s.slice(0, -1) + 'ю';
+  if (/[ая]$/.test(low)) return s.slice(0, -1) + 'е';
+  if (/[бвгджзклмнпрстфхцчшщ]$/.test(low)) return s + 'у';
+  return s;
+}
+/* Отчество в дательном падеже */
+function declPatrDat(p, sex = 'm') {
+  const s = String(p || '').trim();
+  if (!s) return s;
+  const low = s.toLowerCase();
+  if (/на$/.test(low)) return s.slice(0, -1) + 'е';
+  if (/[а-я]ч$/.test(low)) return s + 'у';
+  return s;
 }
 function cleanWs(s) { return String(s || '').replace(/\s+/g, ' ').trim(); }
-/* Фамилия из фразы («младшего сержанта полиции Молотова А.А.» → «Молотова»).
-   Берётся последнее слово из букв перед инициалами. */
-function extractSurname(phrase) {
+/* Обратная таблица: родительный падеж звания -> именительный */
+const RANK_NOM_BY_GEN = {};
+for (const [nom, forms] of Object.entries(RANK_FORMS)) RANK_NOM_BY_GEN[forms[0]] = nom;
+const RANK_GENS = Object.keys(RANK_NOM_BY_GEN).sort((a, b) => b.length - a.length);
+/* Фамилия из родительного в именительный (предполагается муж.; жен. и редкие случаи — вручную) */
+function nomSurname(t) {
+  t = String(t || '').trim();
+  let m;
+  m = t.match(/^(.*(?:ов|ев|ёв|ин|ын))а$/); if (m) return m[1];
+  m = t.match(/^(.*[сц])кого$/); if (m) return m[1] + 'кий';
+  m = t.match(/^(.*)ого$/); if (m) return m[1] + 'ой';
+  m = t.match(/^(.*)ы$/); if (m) return m[1] + 'а';
+  m = t.match(/^(.*)и$/); if (m) return m[1] + 'а';
+  m = t.match(/^(.*)я$/); if (m) return m[1] + 'ь';
+  return t;
+}
+/* Фамилия из фразы (последнее слово из букв, без инициалов) */
+function genSurname(phrase) {
   const toks = cleanWs(phrase).split(' ');
   for (let i = toks.length - 1; i >= 0; i--) {
     const t = toks[i].replace(/[.,]$/g, '');
     if (/^[А-ЯЁ][а-яё]+$/.test(t)) return t;
   }
   return '';
+}
+/* Фраза «кого отстранить» (род. падеж) -> именительный падеж для отметки */
+function nominativePhrase(phrase) {
+  let s = cleanWs(phrase);
+  for (const g of RANK_GENS) {
+    if (s.includes(g)) { s = s.replace(g, RANK_NOM_BY_GEN[g]); break; }
+  }
+  const toks = s.split(' ');
+  for (let i = toks.length - 1; i >= 0; i--) {
+    const t = toks[i].replace(/[.,]$/g, '');
+    if (/^[А-ЯЁ][а-яё]+$/.test(t)) { toks[i] = nomSurname(t); break; }
+  }
+  return toks.join(' ');
 }
 /* Сборка формулировок проверки из данных о сотруднике + профиля */
 function composeProverka(p, d) {
@@ -551,6 +667,33 @@ function processSignature(file, cleanWhite, maxSide) {
   });
 }
 
+/* Автозаполнение уведомления из постановления (вкладка «Проверка») */
+function fillUnspFromProverka(p, d) {
+  const P = state.docs.proverka || {};
+  const rankDat = ((RANK_FORMS[P.subj_rank] || [])[2]) || P.subj_rank || '';
+  const sn = declSurname(P.subj_surname, P.subj_sex);
+  const hasName = cleanWs(P.subj_name) && cleanWs(P.subj_patr);
+  const patch = {};
+  if (P.date) { patch.check_start = P.date; patch.postan_date = P.date; }
+  if (P.subj_post_rod) patch.addr_post = P.subj_post_rod;
+  if (rankDat) patch.addr_rank = rankDat;
+  if (hasName) {
+    patch.addr_fio = cleanWs(`${sn.dat} ${declFirstDat(P.subj_name, P.subj_sex)} ${declPatrDat(P.subj_patr, P.subj_sex)}`);
+    patch.greet_fio = cleanWs(`${P.subj_surname} ${P.subj_name} ${P.subj_patr}`);
+  } else if (!cleanWs(d.addr_fio) && sn.dat) {
+    patch.addr_fio = sn.dat;
+  }
+  patch.appeal = P.subj_sex === 'f' ? 'Уважаемая' : 'Уважаемый';
+  return { patch, msg: 'Уведомление заполнено из постановления' };
+}
+const DOC_ACTIONS = {
+  recompose: {
+    run: (p, d) => ({ patch: composeProverka(p, d), msg: 'Формулировки собраны' }),
+  },
+  fill_from_proverka: {
+    run: (p, d) => fillUnspFromProverka(p, d),
+  },
+};
 function renderProfile() {
   const root = $('#profileForm');
   root.innerHTML = '';
@@ -581,17 +724,31 @@ function renderDoc() {
     for (const f of sec.fields) card.append(fieldNode(sec, f, values, onChange, 'doc'));
     root.append(card);
   }
-  root.querySelectorAll('[data-action="recompose"]').forEach(b => {
+  root.querySelectorAll('[data-action]').forEach(b => {
     b.onclick = () => {
-      const c = composeProverka(state.profile, values);
-      Object.assign(values, c);
-      for (const [k, v] of Object.entries(c)) {
+      const act = DOC_ACTIONS[b.dataset.action];
+      if (!act) return;
+      const { patch, msg } = act.run(state.profile, values);
+      Object.assign(values, patch);
+      for (const [k, v] of Object.entries(patch)) {
         const inp = root.querySelector(`[data-fk="${k}"]`);
-        if (inp) { inp.value = v; inp.classList.remove('invalid'); }
+        if (!inp) continue;
+        if (inp.classList.contains('segmented')) {
+          inp.querySelectorAll('button').forEach(x =>
+            x.setAttribute('aria-pressed', String(x.dataset.v === String(v))));
+        } else if (inp.tagName === 'SELECT') {
+          if (![...inp.options].some(o => o.value === v)) {
+            const op = document.createElement('option');
+            op.value = v; op.textContent = v;
+            inp.append(op);
+          }
+          inp.value = v;
+        } else inp.value = v;
+        inp.classList.remove('invalid');
       }
       saveLS();
       scheduleCompile();
-      setStatus('Формулировки собраны', false, true);
+      setStatus(msg, false, true);
     };
   });
 }
@@ -642,13 +799,38 @@ function buildData() {
     D['v-violation'] = uv ? uv + (/[.!?…:;]$/.test(uv) ? ' ' : '. ') + VIOLATION_TAIL : VIOLATION_TAIL;
     D['v-check-num'] = d.num;
     D['v-suspend-word'] = d.suspend; D['v-suspend-target'] = d.suspend_target; D['v-notify-fio'] = d.notify_fio;
-    D['v-vruch-sign'] = d.subj_surname || ''; D['v-vruch-fio'] = d.suspend_target || '';
-  } else {
+    const hasNP = cleanWs(d.subj_name) && cleanWs(d.subj_patr);
+    D['v-vruch-sign'] = d.subj_surname || '';
+    D['v-vruch-fio'] = hasNP
+      ? cleanWs(`${d.subj_surname} ${d.subj_name} ${d.subj_patr}`)
+      : cleanWs(`${d.subj_rank} ${d.subj_surname} ${d.subj_initials}`);
+  } else if (t === 'otstranenie') {
     D['v-num'] = d.num; D['v-subject'] = d.subject;
     D['v-subject-gen'] = 'со стороны ' + (d.subject || '');
     D['v-officer-rank-full'] = d.officer_rank_full;
     D['v-ustav-article'] = d.ustav_article; D['v-check-num'] = d.check_num;
-    D['v-vruch-sign'] = extractSurname(d.subject); D['v-vruch-fio'] = d.subject || '';
+    D['v-vruch-sign'] = nomSurname(genSurname(d.subject)); D['v-vruch-fio'] = nominativePhrase(d.subject);
+  } else if (t === 'unsp') {
+    D['v-date-dots'] = dotsDate(d.date); D['v-doc-num'] = d.doc_num || '';
+    D['v-show-reply'] = !!(d.reply_num || d.reply_date);
+    D['v-reply-num'] = d.reply_num || ''; D['v-reply-date'] = d.reply_date ? dotsDate(d.reply_date) : '';
+    D['v-addr-post'] = d.addr_post || ''; D['v-addr-rank'] = d.addr_rank || '';
+    D['v-addr-fio'] = d.addr_fio || ''; D['v-appeal'] = d.appeal || 'Уважаемый';
+    D['v-greet-fio'] = d.greet_fio || '';
+    D['v-points'] = d.points || '';
+    D['v-check-start'] = dotsDate(d.check_start); D['v-postan-date'] = dotsDate(d.postan_date);
+    D['v-sign-post'] = p.officer_post || ''; D['v-sign-rank'] = p.officer_rank || '';
+    D['v-officer-phone'] = p.officer_phone || '';
+    D['v-seal-l1'] = 'ОТДЕЛ'; D['v-seal-l2'] = 'СОБСТВЕННОЙ';
+    D['v-seal-l3'] = 'БЕЗОПАСНОСТИ'; D['v-seal-l4'] = '* ГУ МВД *';
+    D['v-show-sign'] = !!d.show_sign; D['v-show-seal'] = !!d.show_seal;
+    D['v-has-seal-img'] = sealReady;
+    const pq = isoParts(d.poluch_date);
+    D['v-show-poluch'] = !!d.show_poluch;
+    D['v-poluch-day'] = pq.day; D['v-poluch-month-gen'] = pq.gen; D['v-poluch-year'] = pq.year;
+    D['v-poluch-time'] = d.poluch_time || '';
+    D['v-poluch-fio'] = d.greet_fio || '';
+    D['v-poluch-sign'] = cleanWs(d.greet_fio).split(' ')[0] || '';
   }
   if (D['v-sogl-osb-day'] === undefined) { put('sogl-osb', d.sogl_osb_date); put('sogl-gu', d.sogl_gu_date); put('vruch', d.vruch_date); }
   const missing = DATA_KEYS[t].filter(k => !(k in D));
@@ -668,6 +850,7 @@ function injectData(tpl, lines) {
 
 /* ---------- Typst + preview ---------- */
 let typstOk = false, tplCache = {}, pdfBytes = null, currentSource = '', lastSignHash = '';
+let sealReady = false;
 let compileSeq = 0, compiling = false, queued = false;
 const scheduleCompile = debounce(() => recompile(), 700);
 
@@ -711,6 +894,12 @@ async function ensureTypst() {
     console.warn('Liberation Serif не загружен, используется шрифт по умолчанию:', e);
   }
   if (window.OSB_GERB_B64) await window.$typst.mapShadow('/gerb.svg', b64ToBytes(window.OSB_GERB_B64));
+  if (window.OSB_SEAL_B64) {
+    try {
+      await window.$typst.mapShadow('/seal.png', b64ToBytes(window.OSB_SEAL_B64));
+      sealReady = true;
+    } catch (e) { console.warn('Печать не загружена:', e); }
+  }
   typstOk = true;
 }
 async function getTemplate(t) {
@@ -780,7 +969,7 @@ async function renderPreview() {
 }
 function docFileBase() {
   const d = state.docs[state.template];
-  const tag = (d.num || d.check_num || d.date || '').toString().replace(/[^\d-]+/g, '') || 'doc';
+  const tag = (d.num || d.doc_num || d.check_num || d.date || '').toString().replace(/[^\p{L}\p{N}-]+/gu, '') || 'doc';
   return `${state.template}_${tag}`;
 }
 async function exportJpg() {

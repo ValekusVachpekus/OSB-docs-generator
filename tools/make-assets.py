@@ -15,6 +15,7 @@ def embed(src: Path, dst: Path, var: str):
 
 embed(A / "gerb.svg", A / "gerb.js", "OSB_GERB_B64")
 embed(A / "sign-default.png", A / "sign-default.js", "OSB_SIGN_DEFAULT_B64")
+embed(A / "Pechat_GU_MVD.png", A / "seal.js", "OSB_SEAL_B64")
 
 FONTS = ["Regular", "Bold", "Italic", "BoldItalic"]
 parts = ["// Сгенерировано tools/make-assets.py. Не править вручную.", "window.OSB_FONTS_B64 = {};"]

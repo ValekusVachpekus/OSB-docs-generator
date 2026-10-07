@@ -67,11 +67,12 @@ def compile_with(name: str, mapping: dict, tag: str) -> bool:
 def main():
     names = sys.argv[1:] or ["all"]
     if names == ["all"]:
-        names = ["trebovanie", "proverka", "otstranenie"]
+        names = ["trebovanie", "proverka", "otstranenie", "unsp"]
     shutil.rmtree(WORK, ignore_errors=True)
     (WORK).mkdir(parents=True)
     shutil.copy(ROOT / "assets/gerb.svg", WORK / "gerb.svg")
     shutil.copy(ROOT / "assets/sign-default.png", WORK / "sign.png")
+    shutil.copy(ROOT / "assets/Pechat_GU_MVD.png", WORK / "seal.png")
     ok = True
     tricky = 'Иванов "Вихрь" \\ Петров'
     for n in names:

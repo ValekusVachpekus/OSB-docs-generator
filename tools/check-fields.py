@@ -6,12 +6,12 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ok = True
 app = (ROOT / "app.js").read_text(encoding="utf-8")
-for name in ["trebovanie", "proverka", "otstranenie"]:
+for name in ["trebovanie", "proverka", "otstranenie", "unsp"]:
     src = (ROOT / "templates" / f"{name}.typ").read_text(encoding="utf-8")
     block = re.search(r"// <OSB-DATA>\n(.*?)\n// </OSB-DATA>", src, re.S).group(1)
     typ_keys = re.findall(r"#let (v-\S+) =", block)
     m = re.search(rf"{name}: \[(.*?)\]", app, re.S)
-    js_keys = re.findall(r"'(v-[a-z-]+)'", m.group(1))
+    js_keys = re.findall(r"'(v-[a-z0-9-]+)'", m.group(1))
     only_typ = [k for k in typ_keys if k not in js_keys]
     only_js = [k for k in js_keys if k not in typ_keys]
     dup = len(typ_keys) != len(set(typ_keys)) or len(js_keys) != len(set(js_keys))

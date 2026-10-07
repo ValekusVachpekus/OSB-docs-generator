@@ -13,8 +13,8 @@ OUT = ROOT / "templates.js"
 
 def build() -> str:
     data = {}
-    for name in ["trebovanie", "proverka", "otstranenie"]:
-        data[name] = (TPL / f"{name}.typ").read_text(encoding="utf-8")
+    for path in sorted(TPL.glob("*.typ")):
+        data[path.stem] = path.read_text(encoding="utf-8")
     return ("// Сгенерировано tools/build-templates.py. Не править вручную.\n"
             "window.OSB_TEMPLATES = " + json.dumps(data, ensure_ascii=False) + ";\n")
 
