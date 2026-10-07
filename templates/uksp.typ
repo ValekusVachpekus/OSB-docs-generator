@@ -47,27 +47,28 @@
 #set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
 
 // <OSB-DATA>
-#let v-date-dots = "01.10.2026"
-#let v-doc-num = "0028-СП"
+#let v-date-dots = "15.10.2026"
+#let v-doc-num = "0031-СП"
 #let v-show-reply = false
 #let v-reply-num = ""
 #let v-reply-date = ""
-#let v-poluch-day = "01"
-#let v-poluch-month-gen = "октября"
-#let v-poluch-year = "2026"
-#let v-poluch-time = "00:00"
-#let v-poluch-sign = "Иванов"
-#let v-poluch-fio = "Иванов Иван Иванович"
 #let v-addr-post = "Инспектору СР ДПС"
 #let v-addr-rank = "Лейтенанту полиции"
 #let v-addr-fio = "Иванову Ивану Ивановичу"
 #let v-appeal = "Уважаемый"
 #let v-greet-fio = "Иванов Иван Иванович"
-#let v-points = "п. 3.2, 4.3 ВУ"
+#let v-what = "нарушении п. 3.2, 4.3 ВУ"
 #let v-check-start = "01.10.2026"
+#let v-check-end = "15.10.2026"
 #let v-postan-date = "01.10.2026"
-#let v-sign-post = "Заместитель начальника отдела собственной безопасности Управления ГАИ"
-#let v-sign-rank = "лейтенант полиции"
+#let v-fact-word = "подтвердился"
+#let v-decision-word = "установленным"
+#let v-est-date = "15.10.2026"
+#let v-est-text = "сотрудником допущено нарушение служебной дисциплины"
+#let v-has-penalty = true
+#let v-penalty = "выговоре"
+#let v-sign-post = "Заместитель начальника отдела собственной безопасности ГУ МВД"
+#let v-sign-rank = "майор полиции"
 #let v-officer-short = "В.А. Щетков"
 #let v-officer-phone = "5-6-5"
 #let v-seal-l1 = "ОТДЕЛ"
@@ -81,6 +82,12 @@
 #let v-show-sign = true
 #let v-show-seal = true
 #let v-show-poluch = true
+#let v-poluch-day = "15"
+#let v-poluch-month-gen = "октября"
+#let v-poluch-year = "2026"
+#let v-poluch-time = "00:00"
+#let v-poluch-sign = "Иванов"
+#let v-poluch-fio = "Иванов Иван Иванович"
 // </OSB-DATA>
 
 // --- Шапка: организация слева, получатель справа ---
@@ -112,7 +119,7 @@
   align(left + top)[
     #set par(first-line-indent: 0pt, justify: false)
     #set text(size: 11pt)
-    #v(3em)
+    #v(2em)
     #v-addr-post \
     #v-addr-rank \
     #v-addr-fio
@@ -130,17 +137,25 @@
 #align(center)[#text(weight: "bold")[#v-appeal #v-greet-fio!]]
 #v(0.5em)
 
-Настоящим уведомляю Вас о том, что в отношении Вас проводится служебная проверка в связи с полученной оперативной информацией о возможном нарушении Вами #v-points, а также о допущенных ими нарушениях служебной дисциплины и требований законодательства.
+Настоящим уведомляю Вас о том, что в отношении Вас проводилась служебная проверка в связи с поступлением сведений о возможном нарушении вами требований Федерального закона №1-ФЗ «О полиции» и Устава органов внутренних дел, выразившимся в #v-what.
 
-Проверка проводится с #v-check-start на основании постановления о назначении служебной проверки от #v-postan-date в соответствии со ст. 28 Федерального закона № 1-ФЗ «О полиции».
+Проверка проводилась с #v-check-start по #v-check-end года на основании постановления о назначении служебной проверки от #v-postan-date и в соответствии со ст. 28 Федерального закона № 1-ФЗ «О полиции».
 
-В настоящее время по указанным фактам проводятся проверочные мероприятия, направленные на установление всех обстоятельств произошедшего. О результатах проведенной проверки и принятом решении Вам будет сообщено.
+По результатам проведённой проверки факт нарушения #v-fact-word: установлено, что #v-est-date #v-est-text.
+
+На основании изложенного, руководствуясь ст. 28 Федерального закона № 1-ФЗ «О полиции», принято решение:
+
+#set enum(indent: 1.25cm)
++ Служебную проверку в отношении Вас завершить, признав факт нарушения #v-decision-word.
+#if v-has-penalty [
+  + Привлечь к дисциплинарной ответственности в виде #v-penalty.
+]
 
 В случае несогласия с принятым решением Вы вправе обжаловать его вышестоящему должностному лицу либо в суд в установленном законодательством порядке.
 
-#v(2em)
+#v(1em)
 
-// --- Подпись ---
+// --- Подпись (как в УНСП) ---
 #if v-show-sign [
   #grid(
     columns: (1.5fr, 1fr),
@@ -159,6 +174,30 @@
       ]
     ]
   )
+]
+#if v-show-seal [
+  #place(top + left, dx: 10mm, dy: 238mm)[
+    #rotate(-8deg)[
+      #if v-has-seal-img [
+        #block(width: 42mm)[#image("/seal.png")]
+      ] else [
+        #box(width: 46mm, height: 46mm)[
+          #place(center)[#circle(radius: 22mm, stroke: 1.4pt + blue.darken(30%))]
+          #place(center)[#circle(radius: 16.5mm, stroke: 0.8pt + blue.darken(30%))]
+          #place(center)[
+            #align(center)[
+              #set text(size: 6pt, fill: blue.darken(30%))
+              #set par(first-line-indent: 0pt, leading: 0.5em)
+              #v-seal-l1 \
+              #v-seal-l2 \
+              #v-seal-l3 \
+              #v-seal-l4
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
 ]
 
 // --- Отметка о получении ---
@@ -181,32 +220,6 @@
           ФИО: #v-poluch-fio
         ]
       )
-    ]
-  ]
-]
-
-// --- Круглая печать ---
-#if v-show-seal [
-  #place(top + left, dx: 10mm, dy: 228mm)[
-    #rotate(-8deg)[
-      #if v-has-seal-img [
-        #block(width: 42mm)[#image("/seal.png")]
-      ] else [
-        #box(width: 46mm, height: 46mm)[
-          #place(center)[#circle(radius: 22mm, stroke: 1.4pt + blue.darken(30%))]
-          #place(center)[#circle(radius: 16.5mm, stroke: 0.8pt + blue.darken(30%))]
-          #place(center)[
-            #align(center)[
-              #set text(size: 6pt, fill: blue.darken(30%))
-              #set par(first-line-indent: 0pt, leading: 0.5em)
-              #v-seal-l1 \
-              #v-seal-l2 \
-              #v-seal-l3 \
-              #v-seal-l4
-            ]
-          ]
-        ]
-      ]
     ]
   ]
 ]

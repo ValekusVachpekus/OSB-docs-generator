@@ -9,7 +9,7 @@ const RANKS = ['рядовой полиции','младший сержант п
 const LS_PROFILE = 'osb_profile_v1';
 const LS_TEMPLATE = 'osb_template_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование', proverka: 'Проверка', otstranenie: 'Отстранение', unsp: 'Уведомление (УНСП)' };
+const TPL_NAMES = { trebovanie: 'Требование', proverka: 'Проверка', otstranenie: 'Отстранение', unsp: 'Уведомление', uksp: 'Окончание' };
 const LIBERATION_FONTS = ['Regular', 'Bold', 'Italic', 'BoldItalic'];
 
 /* Ключи DATA-блока каждого шаблона — должны 1-в-1 совпадать с #let v-* в templates/*.typ.
@@ -39,6 +39,14 @@ const DATA_KEYS = {
   unsp: ['v-date-dots','v-doc-num','v-show-reply','v-reply-num','v-reply-date',
     'v-addr-post','v-addr-rank','v-addr-fio','v-appeal','v-greet-fio',
     'v-points','v-check-start','v-postan-date',
+    'v-sign-post','v-sign-rank','v-officer-short','v-officer-phone',
+    'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
+    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-sign','v-show-seal',
+    'v-show-poluch','v-poluch-day','v-poluch-month-gen','v-poluch-year','v-poluch-time','v-poluch-sign','v-poluch-fio'],
+  uksp: ['v-date-dots','v-doc-num','v-show-reply','v-reply-num','v-reply-date',
+    'v-addr-post','v-addr-rank','v-addr-fio','v-appeal','v-greet-fio',
+    'v-what','v-check-start','v-check-end','v-postan-date',
+    'v-fact-word','v-decision-word','v-est-date','v-est-text','v-has-penalty','v-penalty',
     'v-sign-post','v-sign-rank','v-officer-short','v-officer-phone',
     'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
     'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-sign','v-show-seal',
@@ -117,6 +125,17 @@ const DEFAULT_DOCS = {
     points: 'п. 3.2, 4.3 ВУ', check_start: '2026-10-01', postan_date: '2026-10-01',
     show_sign: true, show_seal: true,
     show_poluch: true, poluch_date: '2026-10-01', poluch_time: '00:00' },
+  uksp: { date: '2026-10-15', doc_num: '0031-СП', reply_num: '', reply_date: '',
+    addr_post: 'Инспектору СР ДПС', addr_rank: 'Лейтенанту полиции',
+    addr_fio: 'Иванову Ивану Ивановичу', appeal: 'Уважаемый',
+    greet_fio: 'Иванов Иван Иванович',
+    what: 'нарушении п. 3.2, 4.3 ВУ',
+    check_start: '2026-10-01', check_end: '2026-10-15', postan_date: '2026-10-01',
+    fact: 'yes', est_date: '2026-10-15',
+    est_text: 'сотрудником допущено нарушение служебной дисциплины',
+    penalty: 'выговоре',
+    show_sign: true, show_seal: true,
+    show_poluch: true, poluch_date: '2026-10-15', poluch_time: '00:00' },
 };
 
 /* ---------- схемы форм ---------- */
@@ -283,6 +302,50 @@ const DOC_SCHEMAS = {
         sub: 'Получивший подставится из данных получателя автоматически' },
     ]},
   ],
+  uksp: [
+    { title: 'Заполнение из постановления', fields: [
+      { k: '_fill_uksp', type: 'action', fn: 'fill_from_proverka', label: '⇪ Заполнить из постановления',
+        sub: 'Даты, звание, ФИО и обращение подставятся со вкладки «Проверка». Заполненное можно править.' },
+    ]},
+    { title: 'Получатель', fields: [
+      { k: 'addr_post', label: 'Должность (дат. падеж)', type: 'text', req: 1, sub: 'Например: Инспектору СР ДПС' },
+      { k: 'addr_rank', label: 'Звание (дат. падеж)', type: 'text', req: 1, sub: 'Например: Лейтенанту полиции' },
+      { k: 'addr_fio', label: 'ФИО (дат. падеж)', type: 'text', req: 1, sub: 'Например: Иванову Ивану Ивановичу' },
+      { k: 'appeal', label: 'Обращение', type: 'segmented',
+        opts: [{ v: 'Уважаемая', label: 'Уважаемая' }, { v: 'Уважаемый', label: 'Уважаемый' }] },
+      { k: 'greet_fio', label: 'ФИО для обращения (именит. падеж)', type: 'text', req: 1,
+        sub: 'Например: Иванов Иван Иванович' },
+    ]},
+    { title: 'Документ', fields: [
+      { k: 'date', label: 'Дата уведомления', type: 'date', req: 1 },
+      { k: 'doc_num', label: 'Номер уведомления', type: 'text', req: 1, sub: 'Например: 0031-СП' },
+      { k: 'reply_num', label: 'На № (ответ на входящий)', type: 'text' },
+      { k: 'reply_date', label: 'От (дата входящего)', type: 'date' },
+    ]},
+    { title: 'Проверка', fields: [
+      { k: 'what', label: 'Нарушение выразилось в', type: 'text', req: 1, sub: 'Например: нарушении п. 3.2, 4.3 ВУ' },
+      { k: 'check_start', label: 'Проверка проводилась с', type: 'date', req: 1 },
+      { k: 'check_end', label: 'Проверка проводилась по', type: 'date', req: 1 },
+      { k: 'postan_date', label: 'Постановление от', type: 'date', req: 1 },
+      { k: 'fact', label: 'Факт нарушения', type: 'segmented',
+        opts: [{ v: 'yes', label: 'Подтвердился' }, { v: 'no', label: 'Не подтвердился' }] },
+      { k: 'est_date', label: 'Установлено (дата)', type: 'date', req: 1 },
+      { k: 'est_text', label: 'Установлено (что)', type: 'textarea', req: 1 },
+      { k: 'penalty', label: 'Взыскание (в предл. падеже)', type: 'text',
+        sub: 'Например: выговоре. Пустое поле — пункт 2 не печатается' },
+    ]},
+    { title: 'Подпись и печать', fields: [
+      { k: 'show_sign', label: 'Поставить подпись', type: 'check',
+        sub: 'Должность и звание — из постоянных данных' },
+      { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
+    ]},
+    { title: 'Отметка о получении', fields: [
+      { k: 'show_poluch', label: 'Поставить отметку о получении', type: 'check' },
+      { k: 'poluch_date', label: 'Дата получения', type: 'date', showIf: 'show_poluch' },
+      { k: 'poluch_time', label: 'Время получения', type: 'time', showIf: 'show_poluch',
+        sub: 'Получивший подставится из данных получателя автоматически' },
+    ]},
+  ],
 };
 
 /* ---------- состояние ---------- */
@@ -294,6 +357,7 @@ const state = {
     proverka: loadLS(LS_DRAFT('proverka'), structuredClone(DEFAULT_DOCS.proverka)),
     otstranenie: loadLS(LS_DRAFT('otstranenie'), structuredClone(DEFAULT_DOCS.otstranenie)),
     unsp: loadLS(LS_DRAFT('unsp'), structuredClone(DEFAULT_DOCS.unsp)),
+    uksp: loadLS(LS_DRAFT('uksp'), structuredClone(DEFAULT_DOCS.uksp)),
   },
 };
 if (!state.docs[state.template]) state.template = 'trebovanie';
@@ -828,6 +892,34 @@ function buildData() {
     const pq = isoParts(d.poluch_date);
     D['v-show-poluch'] = !!d.show_poluch;
     D['v-poluch-day'] = pq.day; D['v-poluch-month-gen'] = pq.gen; D['v-poluch-year'] = pq.year;
+    D['v-poluch-time'] = d.poluch_time || '';
+    D['v-poluch-fio'] = d.greet_fio || '';
+    D['v-poluch-sign'] = cleanWs(d.greet_fio).split(' ')[0] || '';
+  } else if (t === 'uksp') {
+    D['v-date-dots'] = dotsDate(d.date); D['v-doc-num'] = d.doc_num || '';
+    D['v-show-reply'] = !!(d.reply_num || d.reply_date);
+    D['v-reply-num'] = d.reply_num || ''; D['v-reply-date'] = d.reply_date ? dotsDate(d.reply_date) : '';
+    D['v-addr-post'] = d.addr_post || ''; D['v-addr-rank'] = d.addr_rank || '';
+    D['v-addr-fio'] = d.addr_fio || ''; D['v-appeal'] = d.appeal || 'Уважаемый';
+    D['v-greet-fio'] = d.greet_fio || '';
+    D['v-what'] = d.what || '';
+    D['v-check-start'] = dotsDate(d.check_start); D['v-check-end'] = dotsDate(d.check_end);
+    D['v-postan-date'] = dotsDate(d.postan_date);
+    const confirmed = d.fact !== 'no';
+    D['v-fact-word'] = confirmed ? 'подтвердился' : 'не подтвердился';
+    D['v-decision-word'] = confirmed ? 'установленным' : 'неустановленным';
+    D['v-est-date'] = dotsDate(d.est_date); D['v-est-text'] = (d.est_text || '').trim();
+    D['v-has-penalty'] = !!cleanWs(d.penalty);
+    D['v-penalty'] = (d.penalty || '').trim();
+    D['v-sign-post'] = p.officer_post || ''; D['v-sign-rank'] = p.officer_rank || '';
+    D['v-officer-phone'] = p.officer_phone || '';
+    D['v-seal-l1'] = 'ОТДЕЛ'; D['v-seal-l2'] = 'СОБСТВЕННОЙ';
+    D['v-seal-l3'] = 'БЕЗОПАСНОСТИ'; D['v-seal-l4'] = '* ГУ МВД *';
+    D['v-show-sign'] = !!d.show_sign; D['v-show-seal'] = !!d.show_seal;
+    D['v-has-seal-img'] = sealReady;
+    const uq = isoParts(d.poluch_date);
+    D['v-show-poluch'] = !!d.show_poluch;
+    D['v-poluch-day'] = uq.day; D['v-poluch-month-gen'] = uq.gen; D['v-poluch-year'] = uq.year;
     D['v-poluch-time'] = d.poluch_time || '';
     D['v-poluch-fio'] = d.greet_fio || '';
     D['v-poluch-sign'] = cleanWs(d.greet_fio).split(' ')[0] || '';

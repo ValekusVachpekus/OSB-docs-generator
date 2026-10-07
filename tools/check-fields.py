@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ok = True
 app = (ROOT / "app.js").read_text(encoding="utf-8")
-for name in ["trebovanie", "proverka", "otstranenie", "unsp"]:
+for name in ["trebovanie", "proverka", "otstranenie", "unsp", "uksp"]:
     src = (ROOT / "templates" / f"{name}.typ").read_text(encoding="utf-8")
     block = re.search(r"// <OSB-DATA>\n(.*?)\n// </OSB-DATA>", src, re.S).group(1)
     typ_keys = re.findall(r"#let (v-\S+) =", block)
@@ -23,4 +23,22 @@ for name in ["trebovanie", "proverka", "otstranenie", "unsp"]:
           + (f" only_js={only_js}" if only_js else "")
           + (" DUP" if dup else ""))
 print("ALL OK" if ok else "FAILURES")
+
+# --- buildData: все ключи DATA_KEYS должны где-то присваиваться ---
+m2 = re.search(r"function buildData\(\)([\s\S]*?)\nfunction dataLines", app)
+body = m2.group(1)
+assigned = set(re.findall(r"D\['(v-[a-z0-9-]+)'\]\s*=", body))
+for prefix in re.findall(r"put\('([a-z-]+)'", body):
+    assigned |= {f"v-{prefix}-day", f"v-{prefix}-month-gen", f"v-{prefix}-year"}
+allkeys = set()
+for mm in re.finditer(r"(\w+): \[(.*?)\]", app, re.S):
+    if mm.group(1) in ("trebovanie", "proverka", "otstranenie", "unsp", "uksp"):
+        allkeys |= set(re.findall(r"'(v-[a-z0-9-]+)'", mm.group(2)))
+missing_assign = sorted(allkeys - assigned)
+if missing_assign:
+    print("BUILDATA MISSING:", missing_assign)
+    ok = False
+else:
+    print("buildData covers all keys OK")
+print("FINAL:", "ALL OK" if ok else "FAILURES")
 sys.exit(0 if ok else 1)
