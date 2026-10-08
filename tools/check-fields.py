@@ -6,7 +6,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 ok = True
 app = (ROOT / "app.js").read_text(encoding="utf-8")
-for name in ["trebovanie", "proverka", "otstranenie", "unsp", "uksp"]:
+for name in ["trebovanie", "proverka", "otstranenie", "unsp", "uksp", "protokol_oprosa"]:
     src = (ROOT / "templates" / f"{name}.typ").read_text(encoding="utf-8")
     block = re.search(r"// <OSB-DATA>\n(.*?)\n// </OSB-DATA>", src, re.S).group(1)
     typ_keys = re.findall(r"#let (v-\S+) =", block)
@@ -32,7 +32,7 @@ for prefix in re.findall(r"put\('([a-z-]+)'", body):
     assigned |= {f"v-{prefix}-day", f"v-{prefix}-month-gen", f"v-{prefix}-year"}
 allkeys = set()
 for mm in re.finditer(r"(\w+): \[(.*?)\]", app, re.S):
-    if mm.group(1) in ("trebovanie", "proverka", "otstranenie", "unsp", "uksp"):
+    if mm.group(1) in ("trebovanie", "proverka", "otstranenie", "unsp", "uksp", "protokol_oprosa"):
         allkeys |= set(re.findall(r"'(v-[a-z0-9-]+)'", mm.group(2)))
 missing_assign = sorted(allkeys - assigned)
 if missing_assign:

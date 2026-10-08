@@ -39,6 +39,8 @@ def defaults_of(name: str) -> dict:
         k, v = mm.group(1), mm.group(2)
         if v in ("true", "false"):
             out[k] = v == "true"
+        elif re.fullmatch(r"-?\d+", v):
+            out[k] = int(v)
         elif re.fullmatch(r"[0-9.]+mm", v):
             out[k] = v
         elif v.startswith('"'):
@@ -67,7 +69,7 @@ def compile_with(name: str, mapping: dict, tag: str) -> bool:
 def main():
     names = sys.argv[1:] or ["all"]
     if names == ["all"]:
-        names = ["trebovanie", "proverka", "otstranenie", "unsp", "uksp"]
+        names = ["trebovanie", "proverka", "otstranenie", "unsp", "uksp", "protokol_oprosa"]
     shutil.rmtree(WORK, ignore_errors=True)
     (WORK).mkdir(parents=True)
     shutil.copy(ROOT / "assets/gerb.svg", WORK / "gerb.svg")

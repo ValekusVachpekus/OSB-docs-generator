@@ -9,7 +9,7 @@ const RANKS = ['рядовой полиции','младший сержант п
 const LS_PROFILE = 'osb_profile_v1';
 const LS_TEMPLATE = 'osb_template_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование', proverka: 'Проверка', otstranenie: 'Отстранение', unsp: 'Уведомление', uksp: 'Окончание' };
+const TPL_NAMES = { trebovanie: 'Требование', proverka: 'Проверка', otstranenie: 'Отстранение', unsp: 'Уведомление', uksp: 'Окончание', protokol_oprosa: 'Протокол опроса' };
 const LIBERATION_FONTS = ['Regular', 'Bold', 'Italic', 'BoldItalic'];
 
 /* Ключи DATA-блока каждого шаблона — должны 1-в-1 совпадать с #let v-* в templates/*.typ.
@@ -51,6 +51,13 @@ const DATA_KEYS = {
     'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
     'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-copy','v-show-sign','v-show-seal',
     'v-show-poluch','v-poluch-day','v-poluch-month-gen','v-poluch-year','v-poluch-time','v-poluch-sign','v-poluch-fio'],
+  protokol_oprosa: ['v-place','v-day','v-month-gen','v-year2','v-start-h','v-start-m','v-end-h','v-end-m',
+    'v-officer-post','v-officer-title','v-officer-short',
+    'v-fio','v-birth-date','v-birth-place','v-address','v-phone','v-citizenship','v-education',
+    'v-family','v-work','v-military','v-conviction','v-passport','v-other','v-sig',
+    'v-q1','v-a1','v-q2','v-a2','v-q3','v-a3','v-q4','v-a4','v-q5','v-a5',
+    'v-q6','v-a6','v-q7','v-a7','v-q8','v-a8','v-q9','v-a9','v-qa-count',
+    'v-has-sign','v-sign-width'],
 };
 
 /* ---------- значения по умолчанию (пример заполнения) ---------- */
@@ -137,6 +144,24 @@ const DEFAULT_DOCS = {
     penalty: 'выговоре',
     show_sign: true, show_seal: true, show_copy: true,
     show_poluch: true, poluch_date: '2026-10-15', poluch_time: '00:00' },
+  protokol_oprosa: { place: 'г. Арзамас, ул. Пионерская, д. 1',
+    date: '2026-05-29', start_time: '10:00', end_time: '10:30',
+    fio: 'Иванов Иван Иванович', birth_date: '1 января 1990 года',
+    birth_place: 'г. Арзамас Нижегородской области',
+    address: 'г. Арзамас, ул. Ленина, д. 10, кв. 5',
+    phone: '+7 (900) 000-00-00', citizenship: 'Российская Федерация',
+    education: 'Высшее юридическое', family: 'Женат, двое детей',
+    work: 'Инспектор ОБ ДПС', military: 'Военнообязанный',
+    conviction: 'Не имеется',
+    passport: 'Паспорт 22 00 000000, выдан ОВД г. Арзамаса 01.02.2010',
+    other: 'Ранее к ответственности не привлекался',
+    sig: 'Иванов',
+    q1: 'Что вам известно по существу проводимого опроса?',
+    a1: 'По существу заданного вопроса поясняю, что мне ничего не известно.',
+    q2: 'Известны ли вам факты нарушения служебной дисциплины сотрудниками?',
+    a2: 'Нет, о таких фактах мне ничего не известно.',
+    q3: '', a3: '', q4: '', a4: '', q5: '', a5: '',
+    q6: '', a6: '', q7: '', a7: '', q8: '', a8: '', q9: '', a9: '', qa_count: 9 },
 };
 
 /* ---------- схемы форм ---------- */
@@ -350,6 +375,55 @@ const DOC_SCHEMAS = {
         sub: 'Получивший подставится из данных получателя автоматически' },
     ]},
   ],
+  protokol_oprosa: [
+    { title: 'Документ', fields: [
+      { k: 'place', label: 'Место составления', type: 'text', req: 1 },
+      { k: 'date', label: 'Дата протокола', type: 'date', req: 1 },
+      { k: 'start_time', label: 'Опрос начат в', type: 'time', req: 1 },
+      { k: 'end_time', label: 'Опрос окончен в', type: 'time', req: 1 },
+    ]},
+    { title: 'Опрашиваемый (п. 1–12)', fields: [
+      { k: 'fio', label: '1. Фамилия, имя, отчество', type: 'text', req: 1 },
+      { k: 'birth_date', label: '2. Дата рождения', type: 'text' },
+      { k: 'birth_place', label: '3. Место рождения', type: 'text' },
+      { k: 'address', label: '4. Место жительства и (или) регистрации', type: 'text' },
+      { k: 'phone', label: '5. Номер контактного телефона', type: 'text' },
+      { k: 'citizenship', label: '6. Гражданство', type: 'text' },
+      { k: 'education', label: '7. Образование', type: 'text' },
+      { k: 'family', label: '8. Семейное положение, состав семьи', type: 'text' },
+      { k: 'work', label: '9. Место работы или учёбы', type: 'text' },
+      { k: 'military', label: '10. Отношение к воинской обязанности', type: 'text' },
+      { k: 'conviction', label: '11. Наличие судимости', type: 'text',
+        sub: 'Если судим — по какой статье УК РФ' },
+      { k: 'passport', label: '11. Паспорт или иной документ', type: 'textarea' },
+      { k: 'other', label: '12. Иные данные о личности', type: 'textarea' },
+      { k: 'sig', label: 'Подпись опрашиваемого (текст)', type: 'text',
+        sub: 'Печатается на всех трёх линиях подписи; пусто — линии для подписи от руки' },
+    ]},
+    { title: 'Вопросы и ответы', fields: [
+      { k: 'qa_count', label: 'Количество вопросов в документе', type: 'number', min: 1, max: 9,
+        sub: 'Лишние пары не печатаются, введённые данные сохраняются' },
+      { k: 'q1', label: 'Вопрос 1', type: 'text',
+        sub: 'Пустые вопросы/ответы напечатаются линиями для заполнения от руки' },
+      { k: 'a1', label: 'Ответ 1', type: 'textarea' },
+      { k: 'q2', label: 'Вопрос 2', type: 'text' },
+      { k: 'a2', label: 'Ответ 2', type: 'textarea' },
+      { k: 'q3', label: 'Вопрос 3', type: 'text' },
+      { k: 'a3', label: 'Ответ 3', type: 'textarea' },
+      { k: 'q4', label: 'Вопрос 4', type: 'text' },
+      { k: 'a4', label: 'Ответ 4', type: 'textarea' },
+      { k: 'q5', label: 'Вопрос 5', type: 'text' },
+      { k: 'a5', label: 'Ответ 5', type: 'textarea' },
+      { k: 'q6', label: 'Вопрос 6', type: 'text' },
+      { k: 'a6', label: 'Ответ 6', type: 'textarea' },
+      { k: 'q7', label: 'Вопрос 7', type: 'text' },
+      { k: 'a7', label: 'Ответ 7', type: 'textarea' },
+      { k: 'q8', label: 'Вопрос 8', type: 'text' },
+      { k: 'a8', label: 'Ответ 8', type: 'textarea' },
+      { k: 'q9', label: 'Вопрос 9', type: 'text' },
+      { k: 'a9', label: 'Ответ 9', type: 'textarea' },
+    ]},
+  ],
 };
 
 /* ---------- состояние ---------- */
@@ -362,6 +436,7 @@ const state = {
     otstranenie: loadLS(LS_DRAFT('otstranenie'), structuredClone(DEFAULT_DOCS.otstranenie)),
     unsp: loadLS(LS_DRAFT('unsp'), structuredClone(DEFAULT_DOCS.unsp)),
     uksp: loadLS(LS_DRAFT('uksp'), structuredClone(DEFAULT_DOCS.uksp)),
+    protokol_oprosa: loadLS(LS_DRAFT('protokol_oprosa'), structuredClone(DEFAULT_DOCS.protokol_oprosa)),
   },
 };
 if (!state.docs[state.template]) state.template = 'trebovanie';
@@ -521,6 +596,8 @@ function fieldNode(sec, f, values, onChange, scope) {
     inp = document.createElement('input');
     inp.dataset.fk = f.k;
     inp.type = f.type === 'date' ? 'date' : f.type === 'time' ? 'time' : f.type === 'number' ? 'number' : 'text';
+    if (f.min != null) inp.min = f.min;
+    if (f.max != null) inp.max = f.max;
     inp.value = values[f.k] ?? '';
     inp.oninput = () => { values[f.k] = inp.type === 'number' ? +inp.value : inp.value; markReq(inp, f); onChange(f.k); };
   }
@@ -928,6 +1005,34 @@ function buildData() {
     D['v-poluch-time'] = d.poluch_time || '';
     D['v-poluch-fio'] = d.greet_fio || '';
     D['v-poluch-sign'] = cleanWs(d.greet_fio).split(' ')[0] || '';
+  } else if (t === 'protokol_oprosa') {
+    D['v-place'] = d.place || '';
+    D['v-day'] = dp.day;
+    D['v-year2'] = String(dp.year || '').slice(2);
+    const st = String(d.start_time || '').split(':');
+    D['v-start-h'] = st[0] || ''; D['v-start-m'] = st[1] || '';
+    const et = String(d.end_time || '').split(':');
+    D['v-end-h'] = et[0] || ''; D['v-end-m'] = et[1] || '';
+    D['v-officer-post'] = p.officer_post || '';
+    D['v-officer-title'] = cleanWs(`${p.officer_rank || ''} ${p.officer_short || ''}`);
+    D['v-officer-short'] = p.officer_short || '';
+    D['v-fio'] = d.fio || ''; D['v-birth-date'] = d.birth_date || '';
+    D['v-birth-place'] = d.birth_place || ''; D['v-address'] = d.address || '';
+    D['v-phone'] = d.phone || ''; D['v-citizenship'] = d.citizenship || '';
+    D['v-education'] = d.education || ''; D['v-family'] = d.family || '';
+    D['v-work'] = d.work || ''; D['v-military'] = d.military || '';
+    D['v-conviction'] = d.conviction || ''; D['v-passport'] = d.passport || '';
+    D['v-other'] = d.other || ''; D['v-sig'] = d.sig || '';
+    D['v-q1'] = d.q1 || ''; D['v-a1'] = d.a1 || '';
+    D['v-q2'] = d.q2 || ''; D['v-a2'] = d.a2 || '';
+    D['v-q3'] = d.q3 || ''; D['v-a3'] = d.a3 || '';
+    D['v-q4'] = d.q4 || ''; D['v-a4'] = d.a4 || '';
+    D['v-q5'] = d.q5 || ''; D['v-a5'] = d.a5 || '';
+    D['v-q6'] = d.q6 || ''; D['v-a6'] = d.a6 || '';
+    D['v-q7'] = d.q7 || ''; D['v-a7'] = d.a7 || '';
+    D['v-q8'] = d.q8 || ''; D['v-a8'] = d.a8 || '';
+    D['v-q9'] = d.q9 || ''; D['v-a9'] = d.a9 || '';
+    D['v-qa-count'] = Math.min(9, Math.max(1, Math.trunc(+d.qa_count) || 9));
   }
   if (D['v-sogl-osb-day'] === undefined) { put('sogl-osb', d.sogl_osb_date); put('sogl-gu', d.sogl_gu_date); put('vruch', d.vruch_date); }
   const missing = DATA_KEYS[t].filter(k => !(k in D));
@@ -937,6 +1042,7 @@ function buildData() {
 function dataLines(D) {
   return Object.entries(D).map(([k, v]) => {
     if (typeof v === 'boolean') return `#let ${k} = ${v}`;
+    if (typeof v === 'number') return `#let ${k} = ${Number.isFinite(v) ? v : 0}`;
     if (typeof v === 'string' && /^[0-9.]+mm$/.test(v)) return `#let ${k} = ${v}`;
     return `#let ${k} = ${escTyp(v)}`;
   }).join('\n');

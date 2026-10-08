@@ -103,6 +103,25 @@ check.num
 stamps: как выше
 ```
 
+### Protokol oprosa — протокол опроса (вкладка «Протокол опроса», по Protokol_oprosa_OSB.doc)
+```
+doc.place, doc.date (→ «ДД» месяц 20ГГ г. — месяц добавлен, в бумажной форме его нет),
+start_time/end_time (→ часы/минуты начала и окончания)
+officer: post + title (rank+short из профиля) + short — проводящий опрос;
+  подпись проводящего — из профиля (v-has-sign), отдельной галки нет
+anketa п. 1–12: fio, birth_date/place, address, phone, citizenship, education,
+  family, work, military, conviction, passport, other + sig (текст подписи
+  опрашиваемого на всех 3 линиях; пусто — линии для руки)
+  (значения — на линиях во всю ширину; пустые → линии для руки;
+  нумерация «11.» дважды — как в оригинале)
+qa: q1–q9/a1–a9 + qa_count (1–9, лишние пары не печатаются, данные сохраняются);
+  ВОПРОС:/ОТВЕТ: пустой вопрос — 1 линия, пустой ответ — 2 линии;
+  заполненные — на линиях + 1 запасная; блок прав/ст. 61 УК захардкожен
+ruled-text(): текст на разлиновке — линия под КАЖДОЙ строкой (layout+measure,
+  шаг 15.66pt замерен по растру: теория 12pt*1.2+leading НЕ сошлась с Typst 0.15)
+печатей/штампов нет (в исходном протоколе их нет)
+```
+
 ## Архитектура сайта (статика)
 ```
 index.html      # таб-переключатель шаблонов + секции форм + превью A4 + тулбар экспорта
@@ -110,7 +129,8 @@ style.css       # формы, превью, segmented/toggle/checkbox
 app.js          # состояние, localStorage, генерация .typ, typst.ts init/preview/export
 templates.js    # СГЕНЕРИРОВАН (tools/build-templates.py) — шаблоны, вшитые для file://
 templates/
-  trebovanie.typ, proverka.typ, otstranenie.typ  # ПАРАМЕТРИЧЕСКИЕ (#let v-* в // <OSB-DATA>) — источник вёрстки
+  trebovanie.typ, proverka.typ, otstranenie.typ, unsp.typ, uksp.typ, protokol_oprosa.typ
+  # ПАРАМЕТРИЧЕСКИЕ (#let v-* в // <OSB-DATA>) — источник вёрстки
 assets/gerb.svg, assets/fonts/LiberationSerif-*.ttf
 assets/*.js     # СГЕНЕРИРОВАНЫ (tools/make-assets.py) — base64 для file://
 ```
@@ -125,7 +145,7 @@ assets/*.js     # СГЕНЕРИРОВАНЫ (tools/make-assets.py) — base64 �
 
 ## localStorage
 - `osb_profile_v1` — профиль + подпись ( debounce 300мс ).
-- `osb_draft_trebovanie_v1`, `osb_draft_proverka_v1`, `osb_draft_otstranenie_v1` — черновики.
+- `osb_draft_trebovanie_v1`, `osb_draft_proverka_v1`, `osb_draft_otstranenie_v1`, `osb_draft_unsp_v1`, `osb_draft_uksp_v1`, `osb_draft_protokol_oprosa_v1` — черновики.
 - Кнопки: "Очистить документ", "Сбросить всё". Лимит 5МБ → подпись даунскейлить.
 
 ## UX-контролы (обязательно)
