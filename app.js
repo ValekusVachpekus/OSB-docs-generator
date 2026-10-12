@@ -8,8 +8,10 @@ const RANKS = ['рядовой полиции','младший сержант п
   'майор полиции','подполковник полиции','полковник полиции','генерал-майор полиции','генерал-лейтенант полиции'];
 const LS_PROFILE = 'osb_profile_v1';
 const LS_TEMPLATE = 'osb_template_v1';
+const LS_CASES = 'osb_cases_v1';
+const LS_ACTIVE = 'osb_active_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование', proverka: 'Проверка', otstranenie: 'Отстранение', unsp: 'Уведомление', uksp: 'Окончание', protokol_oprosa: 'Протокол опроса' };
+const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Отстранение (beta)', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса' };
 const LIBERATION_FONTS = ['Regular', 'Bold', 'Italic', 'BoldItalic'];
 
 /* Ключи DATA-блока каждого шаблона — должны 1-в-1 совпадать с #let v-* в templates/*.typ.
@@ -295,7 +297,7 @@ const DOC_SCHEMAS = {
   unsp: [
     { title: 'Заполнение из постановления', fields: [
       { k: '_fill_unsp', type: 'action', fn: 'fill_from_proverka', label: '⇪ Заполнить из постановления',
-        sub: 'Даты, звание, ФИО и обращение подставятся со вкладки «Проверка». Заполненное можно править.' },
+        sub: 'Даты, звание, ФИО и обращение подставятся из «Постановления на СП». Заполненное можно править.' },
     ]},
     { title: 'Получатель', fields: [
       { k: 'addr_post', label: 'Должность (дат. падеж)', type: 'text', req: 1, sub: 'Например: Инспектору СР ДПС' },
@@ -333,7 +335,7 @@ const DOC_SCHEMAS = {
   uksp: [
     { title: 'Заполнение из постановления', fields: [
       { k: '_fill_uksp', type: 'action', fn: 'fill_from_proverka', label: '⇪ Заполнить из постановления',
-        sub: 'Даты, звание, ФИО и обращение подставятся со вкладки «Проверка». Заполненное можно править.' },
+        sub: 'Даты, звание, ФИО и обращение подставятся из «Постановления на СП». Заполненное можно править.' },
     ]},
     { title: 'Получатель', fields: [
       { k: 'addr_post', label: 'Должность (дат. падеж)', type: 'text', req: 1, sub: 'Например: Инспектору СР ДПС' },
@@ -438,6 +440,8 @@ const state = {
     uksp: loadLS(LS_DRAFT('uksp'), structuredClone(DEFAULT_DOCS.uksp)),
     protokol_oprosa: loadLS(LS_DRAFT('protokol_oprosa'), structuredClone(DEFAULT_DOCS.protokol_oprosa)),
   },
+  cases: [],
+  active: { mode: 'free', caseId: null, docId: null },
 };
 if (!state.docs[state.template]) state.template = 'trebovanie';
 function loadLS(key, fb) {
@@ -448,12 +452,70 @@ function loadLS(key, fb) {
     return { ...structuredClone(fb), ...o };
   } catch { return fb; }
 }
+/* Дела: загрузка/сохранение отдельно, чтобы не ломать старые черновики */
+function loadCases() {
+  try {
+    const raw = localStorage.getItem(LS_CASES);
+    if (raw) {
+      const arr = JSON.parse(raw);
+      if (Array.isArray(arr)) state.cases = arr.filter(c => c && c.id && Array.isArray(c.docs));
+    }
+  } catch {}
+  try {
+    const raw = localStorage.getItem(LS_ACTIVE);
+    if (raw) {
+      const a = JSON.parse(raw);
+      if (a && (a.mode === 'free' || a.mode === 'case')) state.active = a;
+    }
+  } catch {}
+  // чистка битых ссылок
+  if (state.active.mode === 'case') {
+    const c = state.cases.find(x => x.id === state.active.caseId);
+    if (!c) state.active = { mode: 'free', caseId: null, docId: null };
+    else if (state.active.docId && !c.docs.some(d => d.docId === state.active.docId)) {
+      state.active.docId = c.docs[0] ? c.docs[0].docId : null;
+    }
+  }
+}
+function uid(prefix) {
+  return prefix + '_' + Date.now().toString(36) + Math.floor(Math.random() * 1e6).toString(36);
+}
+function getActiveCase() {
+  if (state.active.mode !== 'case') return null;
+  return state.cases.find(c => c.id === state.active.caseId) || null;
+}
+function getActiveDocRef() {
+  const c = getActiveCase();
+  if (!c) return null;
+  return c.docs.find(d => d.docId === state.active.docId) || c.docs[0] || null;
+}
+/* Активный шаблон и данные: в деле — из документа дела, вне дел — как раньше */
+function workTpl() {
+  if (state.active.mode === 'case') {
+    const r = getActiveDocRef();
+    return r ? r.tpl : 'trebovanie';
+  }
+  return state.template;
+}
+function workData() {
+  if (state.active.mode === 'case') {
+    const r = getActiveDocRef();
+    return r ? r.data : null;
+  }
+  return state.docs[state.template];
+}
 function saveLS() {
   try {
     localStorage.setItem(LS_PROFILE, JSON.stringify(state.profile));
     localStorage.setItem(LS_TEMPLATE, state.template);
     localStorage.setItem(LS_DRAFT(state.template), JSON.stringify(state.docs[state.template]));
+    localStorage.setItem(LS_CASES, JSON.stringify(state.cases));
+    localStorage.setItem(LS_ACTIVE, JSON.stringify(state.active));
   } catch (e) { setStatus('localStorage переполнен: уменьшите картинку подписи', true); }
+}
+function touchCase() {
+  const c = getActiveCase();
+  if (c) c.updatedAt = Date.now();
 }
 
 /* ---------- утилиты ---------- */
@@ -812,9 +874,16 @@ function processSignature(file, cleanWhite, maxSide) {
   });
 }
 
-/* Автозаполнение уведомления из постановления (вкладка «Проверка») */
+/* Автозаполнение уведомления из постановления.
+   Вне дел — из глобальной вкладки «Проверка», в деле — строго из Проверки того же дела. */
 function fillUnspFromProverka(p, d) {
-  const P = state.docs.proverka || {};
+  let P = state.docs.proverka || {};
+  if (state.active.mode === 'case') {
+    const c = getActiveCase();
+    const prov = c ? c.docs.find(x => x.tpl === 'proverka') : null;
+    if (!prov) return { patch: {}, msg: 'В этом деле нет Постановления на СП — добавьте его первым документом' };
+    P = prov.data || {};
+  }
   const rankDat = ((RANK_FORMS[P.subj_rank] || [])[2]) || P.subj_rank || '';
   const sn = declSurname(P.subj_surname, P.subj_sex);
   const hasName = cleanWs(P.subj_name) && cleanWs(P.subj_patr);
@@ -857,9 +926,36 @@ function renderProfile() {
 function renderDoc() {
   const root = $('#docForm');
   root.innerHTML = '';
-  const values = state.docs[state.template];
-  const onChange = () => { saveLS(); refreshSubforms(root, values); scheduleCompile(); };
-  for (const sec of DOC_SCHEMAS[state.template]) {
+  const tpl = workTpl();
+  const values = workData();
+  if (!values || !DOC_SCHEMAS[tpl]) {
+    root.innerHTML = '<div class="card">В этом деле пока нет документов — нажмите «+ Документ».</div>';
+    return;
+  }
+  const ref = getActiveDocRef();
+  const title = (state.active.mode === 'case' && ref)
+    ? `${TPL_NAMES[tpl]} · ${ref.name}` : (TPL_NAMES[tpl] || tpl);
+  const head = document.createElement('div');
+  head.className = 'card dochead';
+  head.innerHTML = '';
+  const ht = document.createElement('h3');
+  ht.textContent = title;
+  ht.style.marginTop = '0';
+  head.append(ht);
+  if (state.active.mode === 'case' && ref) {
+    const row = document.createElement('div');
+    row.className = 'row';
+    const nm = document.createElement('input');
+    nm.type = 'text'; nm.value = ref.name || '';
+    nm.title = 'Название документа в деле';
+    nm.style.flex = '1';
+    nm.oninput = () => { ref.name = nm.value.slice(0, 120); touchCase(); saveLS(); syncContextUI(); };
+    row.append(nm);
+    head.append(row);
+  }
+  root.append(head);
+  const onChange = () => { touchCase(); saveLS(); refreshSubforms(root, values); scheduleCompile(); };
+  for (const sec of DOC_SCHEMAS[tpl]) {
     const card = document.createElement('div');
     card.className = 'card';
     const h = document.createElement('h3');
@@ -906,9 +1002,9 @@ function signBytes() {
   return null;
 }
 function buildData() {
-  const t = state.template;
+  const t = workTpl();
   const p = state.profile;
-  const d = state.docs[t];
+  const d = workData() || {};
   const D = {};
   const dp = isoParts(d.date);
   D['v-day'] = dp.day; D['v-month-gen'] = dp.gen; D['v-month-num'] = dp.num; D['v-year'] = dp.year;
@@ -1115,6 +1211,13 @@ async function getTemplate(t) {
 }
 async function recompile() {
   if (!typstOk) return;
+  if (state.active.mode === 'case' && !getActiveDocRef()) {
+    pdfBytes = null; currentSource = '';
+    setButtons(false);
+    $('#pages').innerHTML = '<div class="placeholder">В деле пока нет документов — нажмите «+ Документ».</div>';
+    setStatus('Дело пустое — добавьте документ', false, false);
+    return;
+  }
   if (compiling) { queued = true; return; }
   compiling = true;
   try {
@@ -1130,7 +1233,7 @@ async function recompile() {
           else { try { await window.$typst.unmapShadow('/sign.png'); } catch {} }
           lastSignHash = hash;
         }
-        const tpl = await getTemplate(state.template);
+        const tpl = await getTemplate(workTpl());
         currentSource = injectData(tpl, dataLines(buildData()));
         const t0 = performance.now();
         pdfBytes = await window.$typst.pdf({ mainContent: currentSource });
@@ -1170,10 +1273,21 @@ async function renderPreview() {
     box.append(cv);
   }
 }
+function slugify(s) {
+  return String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'delo';
+}
 function docFileBase() {
-  const d = state.docs[state.template];
+  const t = workTpl();
+  const d = workData() || {};
   const tag = (d.num || d.doc_num || d.check_num || d.date || '').toString().replace(/[^\p{L}\p{N}-]+/gu, '') || 'doc';
-  return `${state.template}_${tag}`;
+  if (state.active.mode === 'case') {
+    const c = getActiveCase();
+    const ref = getActiveDocRef();
+    const cs = slugify(c ? c.title : 'delo');
+    const ds = slugify(ref ? ref.name : t);
+    return `${cs}_${ds}_${tag}`;
+  }
+  return `${t}_${tag}`;
 }
 async function exportJpg() {
   if (!pdfBytes) return;
@@ -1205,7 +1319,7 @@ function missingRequired() {
     }
   };
   check(PROFILE_SECTIONS.filter(s => s.fields).map(s => ({ fields: s.fields })), state.profile);
-  check(DOC_SCHEMAS[state.template], state.docs[state.template]);
+  check(DOC_SCHEMAS[workTpl()] || [], workData() || {});
   return bad;
 }
 
@@ -1213,6 +1327,7 @@ function missingRequired() {
 function bindUI() {
   document.querySelectorAll('#templateTabs button').forEach(b => {
     b.onclick = () => {
+      if (state.active.mode !== 'free') setActiveFree();
       if (state.template === b.dataset.t) return;
       state.template = b.dataset.t;
       syncTabs();
@@ -1235,13 +1350,22 @@ function bindUI() {
     if (currentSource) download(new Blob([currentSource], { type: 'text/plain' }), docFileBase() + '.typ');
   };
   $('#btnFill').onclick = () => {
+    if (state.active.mode === 'case' && !getActiveDocRef()) return;
     if (!confirm('Заменить данные текущего документа примером?')) return;
-    state.docs[state.template] = structuredClone(DEFAULT_DOCS[state.template]);
+    const t = workTpl();
+    const fresh = structuredClone(DEFAULT_DOCS[t]);
+    if (state.active.mode === 'case') {
+      Object.assign(workData(), fresh);
+      touchCase();
+    } else {
+      state.docs[state.template] = fresh;
+    }
     saveLS(); renderDoc(); recompile();
   };
   $('#btnClear').onclick = () => {
+    if (state.active.mode === 'case' && !getActiveDocRef()) return;
     if (!confirm('Очистить все поля текущего документа? Профиль и город сохранятся.')) return;
-    const d = state.docs[state.template];
+    const d = workData();
     const keepCity = d.city;
     for (const k of Object.keys(d)) {
       if (k === 'city') continue;
@@ -1253,12 +1377,268 @@ function bindUI() {
       else d[k] = '';
     }
     d.city = keepCity;
+    touchCase();
     saveLS(); renderDoc(); recompile();
   };
+  bindCasesUI();
 }
 function syncTabs() {
   document.querySelectorAll('#templateTabs button').forEach(b =>
     b.setAttribute('aria-selected', String(b.dataset.t === state.template)));
+}
+
+/* ---------- дела ---------- */
+function setActiveFree() {
+  state.active = { mode: 'free', caseId: null, docId: null };
+  saveLS(); syncContextUI(); renderDoc(); recompile();
+}
+function openCase(caseId, docId) {
+  const c = state.cases.find(x => x.id === caseId);
+  if (!c) return;
+  state.active = { mode: 'case', caseId, docId: docId || (c.docs[0] && c.docs[0].docId) || null };
+  saveLS(); syncContextUI(); renderDoc(); recompile();
+  hideCasesMenu();
+}
+function autoDocName(c, tpl) {
+  const n = c.docs.filter(d => d.tpl === tpl).length + 1;
+  const base = TPL_NAMES[tpl] || tpl;
+  return n <= 1 && !c.docs.some(d => d.tpl === tpl) ? base : `${base} ${n}`;
+}
+function addDocToCase(tpl) {
+  const c = getActiveCase();
+  if (!c) return;
+  const doc = { docId: uid('d'), tpl, name: autoDocName(c, tpl), data: structuredClone(DEFAULT_DOCS[tpl]) };
+  c.docs.push(doc);
+  state.active.docId = doc.docId;
+  touchCase(); saveLS(); syncContextUI(); renderDoc(); recompile();
+}
+function syncContextUI() {
+  const inCase = state.active.mode === 'case';
+  const c = getActiveCase();
+  $('#templateTabs').style.display = inCase ? 'none' : '';
+  $('#caseBar').hidden = !inCase;
+  const btn = $('#btnCases');
+  btn.textContent = inCase && c ? `📁 ${c.title} ▾` : '📁 Вне дел ▾';
+  if (inCase && c) {
+    $('#caseTitle').textContent = c.title;
+    $('#caseDescr').textContent = c.descr || '';
+    const box = $('#docChips');
+    box.innerHTML = '';
+    if (!c.docs.length) {
+      box.innerHTML = '<span style="color:#999;font-size:13px">Нет документов — нажмите «+ Документ»</span>';
+    }
+    for (const d of c.docs) {
+      const chip = document.createElement('span');
+      chip.className = 'docchip';
+      chip.setAttribute('aria-selected', String(d.docId === state.active.docId));
+      chip.title = `${TPL_NAMES[d.tpl] || d.tpl}`;
+      const nm = document.createElement('span');
+      nm.className = 'nm';
+      nm.textContent = d.name;
+      nm.onclick = () => {
+        state.active.docId = d.docId;
+        saveLS(); syncContextUI(); renderDoc(); recompile();
+      };
+      const rn = document.createElement('button');
+      rn.className = 'rn'; rn.textContent = '✎'; rn.title = 'Переименовать документ';
+      rn.onclick = ev => { ev.stopPropagation(); openModal('rename-doc', d.docId); };
+      const del = document.createElement('button');
+      del.className = 'del'; del.textContent = '×'; del.title = 'Удалить документ';
+      del.onclick = ev => {
+        ev.stopPropagation();
+        if (!confirm(`Удалить «${d.name}» из дела?`)) return;
+        c.docs = c.docs.filter(x => x.docId !== d.docId);
+        if (state.active.docId === d.docId) state.active.docId = c.docs[0] ? c.docs[0].docId : null;
+        touchCase(); saveLS(); syncContextUI(); renderDoc(); recompile();
+      };
+      chip.append(nm, rn, del);
+      box.append(chip);
+    }
+    // меню добавления
+    const am = $('#addDocMenu');
+    am.hidden = true;
+    am.innerHTML = '';
+    for (const [tpl, label] of Object.entries(TPL_NAMES)) {
+      const b = document.createElement('button');
+      b.textContent = label;
+      b.onclick = () => { am.hidden = true; addDocToCase(tpl); };
+      am.append(b);
+    }
+  }
+  syncTabs();
+  renderCasesMenu();
+}
+function hideCasesMenu() { $('#casesMenu').hidden = true; }
+function renderCasesMenu() {
+  const m = $('#casesMenu');
+  m.innerHTML = '';
+  const head = document.createElement('div');
+  head.className = 'cm-head';
+  const bNew = document.createElement('button');
+  bNew.className = 'primary'; bNew.textContent = '+ Новое дело';
+  bNew.onclick = () => { hideCasesMenu(); openModal('create'); };
+  const bImp = document.createElement('button');
+  bImp.textContent = 'Импорт JSON';
+  bImp.onclick = () => $('#importCaseFile').click();
+  head.append(bNew, bImp);
+  m.append(head);
+  const free = document.createElement('button');
+  free.className = 'cm-item' + (state.active.mode === 'free' ? ' active' : '');
+  free.innerHTML = '';
+  const fm = document.createElement('span');
+  fm.className = 'cm-main';
+  fm.innerHTML = `<div class="cm-title">📄 Вне дел (просто документы)</div><div class="cm-sub">6 черновиков без привязки к делу</div>`;
+  free.append(fm);
+  free.onclick = () => { setActiveFree(); hideCasesMenu(); };
+  m.append(free);
+  const sorted = [...state.cases].sort((a, b) => (b.updatedAt || 0) - (a.updatedAt || 0));
+  for (const c of sorted) {
+    const it = document.createElement('div');
+    it.className = 'cm-item' + (state.active.mode === 'case' && state.active.caseId === c.id ? ' active' : '');
+    const main = document.createElement('button');
+    main.className = 'cm-main';
+    main.style.cssText = 'border:0;background:transparent;text-align:left;cursor:pointer;padding:0;color:inherit';
+    main.innerHTML = `<div class="cm-title"></div><div class="cm-sub"></div><div class="cm-meta"></div>`;
+    main.querySelector('.cm-title').textContent = '📁 ' + c.title;
+    main.querySelector('.cm-sub').textContent = c.descr || '—';
+    main.querySelector('.cm-meta').textContent = `${c.docs.length} док. · ${c.updatedAt ? new Date(c.updatedAt).toLocaleDateString('ru-RU') : ''}`;
+    main.onclick = () => openCase(c.id);
+    const x = document.createElement('button');
+    x.className = 'cm-x'; x.textContent = '🗑'; x.title = 'Удалить дело';
+    x.onclick = () => deleteCase(c.id);
+    it.append(main, x);
+    m.append(it);
+  }
+  if (!state.cases.length) {
+    const p = document.createElement('div');
+    p.style.cssText = 'padding:8px;color:#999;font-size:12px';
+    p.textContent = 'Дел пока нет — создайте первое кнопкой выше.';
+    m.append(p);
+  }
+}
+function deleteCase(caseId) {
+  const c = state.cases.find(x => x.id === caseId);
+  if (!c) return;
+  if (!confirm(`Удалить дело «${c.title}» и все ${c.docs.length} документов?`)) return;
+  state.cases = state.cases.filter(x => x.id !== caseId);
+  if (state.active.caseId === caseId) state.active = { mode: 'free', caseId: null, docId: null };
+  saveLS(); syncContextUI(); renderDoc(); recompile();
+}
+function exportCase(caseId) {
+  const c = state.cases.find(x => x.id === caseId) || getActiveCase();
+  if (!c) return;
+  const payload = { v: 1, app: 'osb-docs', title: c.title, descr: c.descr || '', docs: c.docs };
+  download(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `${slugify(c.title)}.json`);
+}
+function importCaseFile(file) {
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const o = JSON.parse(r.result);
+      if (!o || !Array.isArray(o.docs)) throw new Error('не похож на дело (нет docs[])');
+      const docs = [];
+      for (const d of o.docs) {
+        if (!d || !TPL_NAMES[d.tpl]) continue;
+        docs.push({
+          docId: uid('d'),
+          tpl: d.tpl,
+          name: String(d.name || TPL_NAMES[d.tpl]).slice(0, 120),
+          data: { ...structuredClone(DEFAULT_DOCS[d.tpl]), ...(d.data || {}) },
+        });
+      }
+      if (!docs.length) throw new Error('в файле нет известных шаблонов');
+      const c = {
+        id: uid('c'), title: String(o.title || file.name.replace(/\.json$/i, '')).slice(0, 120) || 'Дело (импорт)',
+        descr: String(o.descr || '').slice(0, 500), createdAt: Date.now(), updatedAt: Date.now(), docs,
+      };
+      state.cases.push(c);
+      saveLS(); syncContextUI();
+      setStatus(`Импортировано дело «${c.title}» (${docs.length} док.)`, false, true);
+    } catch (e) { setStatus('Импорт не удался: ' + e.message, true); }
+  };
+  r.readAsText(file);
+}
+/* Модалка создания/переименования */
+let modalMode = null, modalDocId = null;
+function openModal(mode, docId) {
+  modalMode = mode; modalDocId = docId || null;
+  const ov = $('#modalOverlay');
+  if (mode === 'create') {
+    $('#modalTitle').textContent = 'Новое дело';
+    $('#modalName').value = '';
+    $('#modalDescr').value = '';
+  } else if (mode === 'rename-case') {
+    const c = getActiveCase();
+    $('#modalTitle').textContent = 'Переименовать дело';
+    $('#modalName').value = c ? c.title : '';
+    $('#modalDescr').value = c ? (c.descr || '') : '';
+  } else if (mode === 'rename-doc') {
+    const c = getActiveCase();
+    const d = c ? c.docs.find(x => x.docId === docId) : null;
+    $('#modalTitle').textContent = 'Переименовать документ';
+    $('#modalName').value = d ? d.name : '';
+    $('#modalDescr').value = '';
+    $('#modalDescr').closest('.field').style.display = 'none';
+  }
+  if (mode !== 'rename-doc') $('#modalDescr').closest('.field').style.display = '';
+  ov.hidden = false;
+  setTimeout(() => $('#modalName').focus(), 50);
+}
+function closeModal() { $('#modalOverlay').hidden = true; modalMode = null; modalDocId = null; }
+function submitModal() {
+  const name = $('#modalName').value.trim();
+  const descr = $('#modalDescr').value.trim();
+  if (modalMode === 'create') {
+    if (!name) { $('#modalName').focus(); return; }
+    const c = { id: uid('c'), title: name.slice(0, 120), descr: descr.slice(0, 500), createdAt: Date.now(), updatedAt: Date.now(), docs: [] };
+    state.cases.push(c);
+    state.active = { mode: 'case', caseId: c.id, docId: null };
+    saveLS(); syncContextUI(); renderDoc(); recompile();
+    setStatus(`Дело «${c.title}» создано — добавьте документы`, false, true);
+  } else if (modalMode === 'rename-case') {
+    if (!name) { $('#modalName').focus(); return; }
+    const c = getActiveCase();
+    if (c) { c.title = name.slice(0, 120); c.descr = descr.slice(0, 500); touchCase(); saveLS(); syncContextUI(); }
+  } else if (modalMode === 'rename-doc') {
+    if (!name) { $('#modalName').focus(); return; }
+    const c = getActiveCase();
+    const d = c ? c.docs.find(x => x.docId === modalDocId) : null;
+    if (d) { d.name = name.slice(0, 120); touchCase(); saveLS(); syncContextUI(); renderDoc(); }
+  }
+  closeModal();
+}
+function bindCasesUI() {
+  const menu = $('#casesMenu');
+  $('#btnCases').onclick = ev => {
+    ev.stopPropagation();
+    renderCasesMenu();
+    menu.hidden = !menu.hidden;
+    $('#addDocMenu').hidden = true;
+  };
+  document.addEventListener('click', ev => {
+    if (!menu.hidden && !menu.contains(ev.target) && ev.target.id !== 'btnCases') menu.hidden = true;
+    const am = $('#addDocMenu');
+    if (!am.hidden && !am.contains(ev.target) && ev.target.id !== 'btnAddDoc') am.hidden = true;
+  });
+  $('#btnBackFree').onclick = () => setActiveFree();
+  $('#btnAddDoc').onclick = ev => {
+    ev.stopPropagation();
+    const am = $('#addDocMenu');
+    am.hidden = !am.hidden;
+  };
+  $('#btnRenameCase').onclick = () => openModal('rename-case');
+  $('#btnExportCase').onclick = () => { const c = getActiveCase(); if (c) exportCase(c.id); };
+  $('#btnDeleteCase').onclick = () => { const c = getActiveCase(); if (c) deleteCase(c.id); };
+  $('#modalOk').onclick = () => submitModal();
+  $('#modalCancel').onclick = () => closeModal();
+  $('#modalOverlay').addEventListener('click', ev => { if (ev.target.id === 'modalOverlay') closeModal(); });
+  document.addEventListener('keydown', ev => { if (ev.key === 'Escape') { closeModal(); hideCasesMenu(); } });
+  $('#modalName').addEventListener('keydown', ev => { if (ev.key === 'Enter') submitModal(); });
+  $('#importCaseFile').onchange = ev => {
+    const f = ev.target.files[0];
+    if (f) importCaseFile(f);
+    ev.target.value = '';
+  };
 }
 
 /* Разделитель панелей: перетаскивание мышью, ширина сохраняется */
@@ -1295,8 +1675,10 @@ function initSplitter() {
 
 /* ---------- старт ---------- */
 (async function boot() {
+  loadCases();
   syncTabs();
   renderProfile();
+  syncContextUI();
   renderDoc();
   bindUI();
   initSplitter();

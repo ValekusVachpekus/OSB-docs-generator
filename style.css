@@ -30,6 +30,85 @@ body {
   padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 14px;
 }
 .tabs button[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; }
+.topright { display: flex; align-items: center; gap: 12px; position: relative; }
+.cases-btn {
+  border: 1px solid #3a4f6e; background: #fff; color: #16233a;
+  padding: 7px 14px; border-radius: 8px; cursor: pointer; font-size: 14px; font-weight: 700;
+  white-space: nowrap; max-width: 280px; overflow: hidden; text-overflow: ellipsis;
+}
+.cases-btn:hover { border-color: var(--accent); }
+.cases-menu {
+  position: absolute; top: 52px; right: 12px; width: 360px; max-height: 70vh; overflow: auto;
+  background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(10,20,40,.25); z-index: 50; padding: 8px;
+}
+.cases-menu[hidden] { display: none; }
+.cases-menu .cm-item {
+  display: flex; gap: 8px; align-items: flex-start; width: 100%;
+  border: 1px solid transparent; background: transparent; text-align: left;
+  padding: 8px; border-radius: 8px; cursor: pointer; color: var(--ink); font-size: 14px;
+}
+.cases-menu .cm-item:hover { background: #f3f5f8; }
+.cases-menu .cm-item.active { border-color: var(--accent); background: #eef4fb; }
+.cases-menu .cm-main { flex: 1; min-width: 0; }
+.cases-menu .cm-title { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cases-menu .cm-sub { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.cases-menu .cm-meta { font-size: 11px; color: var(--muted); }
+.cases-menu .cm-x { flex: 0 0 auto; border: 0; background: transparent; cursor: pointer; color: var(--muted); font-size: 14px; padding: 2px 6px; }
+.cases-menu .cm-x:hover { color: var(--danger); }
+.cases-menu .cm-head { display: flex; gap: 8px; padding: 4px; }
+.cases-menu .cm-head button {
+  flex: 1; padding: 8px 14px; border-radius: 8px; cursor: pointer; font-size: 14px;
+  border: 1px solid var(--line); background: #fff; color: var(--ink);
+}
+.cases-menu .cm-head button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+
+.casebar {
+  background: #fff; border-bottom: 1px solid var(--line);
+  padding: 8px 16px; display: flex; flex-direction: column; gap: 8px;
+  max-width: 1700px; margin: 0 auto;
+}
+.casebar[hidden] { display: none; }
+.casebar-top { display: flex; align-items: center; gap: 10px; }
+.casebar-title { font-weight: 700; font-size: 15px; }
+.casebar-descr { color: var(--muted); font-size: 12px; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.casebar-actions { display: flex; gap: 8px; margin-left: auto; }
+.mini.danger { color: var(--danger); border-color: #efb3ae; }
+.mini.danger:hover { border-color: var(--danger); }
+.casebar-docs { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.docchips { display: flex; gap: 6px; flex-wrap: wrap; flex: 1; }
+.docchip {
+  border: 1px solid var(--line); background: #f3f5f8; border-radius: 16px;
+  padding: 5px 6px 5px 12px; font-size: 13px; cursor: pointer;
+  display: flex; align-items: center; gap: 6px; max-width: 260px;
+}
+.docchip[aria-selected="true"] { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
+.docchip .nm { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.docchip .rn, .docchip .del { border: 0; background: transparent; cursor: pointer; font-size: 12px; padding: 0 4px; color: inherit; opacity: .7; }
+.docchip .rn:hover, .docchip .del:hover { opacity: 1; }
+.adddoc-wrap { position: relative; }
+.adddoc-menu {
+  position: absolute; right: 0; top: 34px; width: 220px; z-index: 40;
+  background: #fff; border: 1px solid var(--line); border-radius: 10px;
+  box-shadow: 0 8px 30px rgba(10,20,40,.2); padding: 6px;
+}
+.adddoc-menu[hidden] { display: none; }
+.adddoc-menu button {
+  display: block; width: 100%; text-align: left; border: 0; background: transparent;
+  padding: 8px 10px; border-radius: 7px; cursor: pointer; font-size: 14px; color: var(--ink);
+}
+.adddoc-menu button:hover { background: #f3f5f8; }
+
+.modal-overlay {
+  position: fixed; inset: 0; background: rgba(10,20,40,.45); z-index: 100;
+  display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+.modal-overlay[hidden] { display: none; }
+.modal { background: #fff; border-radius: 12px; padding: 16px; width: 420px; max-width: 100%; }
+.modal h3 { margin: 0 0 10px; }
+.modal-row { display: flex; gap: 8px; }
+.modal-row button { flex: 1; padding: 9px; border-radius: 8px; cursor: pointer; border: 1px solid var(--line); background: #fff; }
+.modal-row button.primary { background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 700; }
 .status { font-size: 12px; color: #9fb3cc; white-space: nowrap; }
 .status.err { color: #ff9d97; }
 .status.ok { color: #8fd6a0; }
@@ -46,6 +125,11 @@ body {
 }
 .splitter:hover, .splitter.drag { background: linear-gradient(90deg, transparent 3px, var(--accent) 3px 7px, transparent 7px); }
 .forms { display: flex; flex-direction: column; gap: 12px; }
+.card.dochead h3 { margin: 0 0 8px; font-size: 15px; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.card.dochead input[type="text"] {
+  width: 100%; padding: 7px 9px; font-size: 14px;
+  border: 1px solid var(--line); border-radius: 7px; background: #fff; color: var(--ink);
+}
 .card {
   background: var(--card); border: 1px solid var(--line);
   border-radius: var(--radius); padding: 12px 14px;
@@ -80,7 +164,13 @@ body {
 
 .row { display: flex; gap: 8px; align-items: center; }
 .row > * { flex: 1; }
-.mini { flex: 0 0 auto; font-size: 12px; padding: 6px 10px; cursor: pointer; }
+.mini {
+  flex: 0 0 auto; font-size: 14px; padding: 8px 14px; cursor: pointer;
+  border-radius: 8px; border: 1px solid var(--line);
+  background: #fff; color: var(--ink);
+}
+.mini:hover { border-color: var(--accent); }
+.mini:disabled { opacity: .45; cursor: default; }
 
 .sign-preview {
   width: 100%; min-height: 70px; border: 1px dashed var(--line); border-radius: 7px;

@@ -19,19 +19,43 @@
 <header class="topbar">
   <div class="brand">ОСБ <span>· Автор: Vladislav_Shetkov</span></div>
   <nav class="tabs" id="templateTabs" role="tablist" aria-label="Выбор шаблона">
-    <button data-t="trebovanie" role="tab">Требование</button>
-    <button data-t="proverka" role="tab">Проверка</button>
-    <button data-t="otstranenie" role="tab">Отстранение</button>
-    <button data-t="unsp" role="tab">Уведомление</button>
-    <button data-t="uksp" role="tab">Окончание</button>
+    <button data-t="trebovanie" role="tab">Требование (beta)</button>
+    <button data-t="proverka" role="tab">Постановление на СП</button>
+    <button data-t="otstranenie" role="tab">Отстранение (beta)</button>
+    <button data-t="unsp" role="tab">Уведомление о начале СП</button>
+    <button data-t="uksp" role="tab">Уведомление об окончании СП</button>
     <button data-t="protokol_oprosa" role="tab">Протокол опроса</button>
   </nav>
-  <div class="status" id="status">Загрузка…</div>
+  <div class="topright">
+    <button id="btnCases" class="cases-btn" title="Дела: создать, открыть, удалить">📁 Вне дел ▾</button>
+    <div class="status" id="status">Загрузка…</div>
+  </div>
+  <div class="cases-menu" id="casesMenu" hidden></div>
 </header>
+
+<div class="casebar" id="caseBar" hidden>
+  <div class="casebar-top">
+    <button id="btnBackFree" class="mini" title="Вернуться к простым документам без дел">← Вне дел</button>
+    <span class="casebar-title" id="caseTitle"></span>
+    <span class="casebar-descr" id="caseDescr"></span>
+    <span class="casebar-actions">
+      <button id="btnRenameCase" class="mini" title="Переименовать дело">✎</button>
+      <button id="btnExportCase" class="mini" title="Скачать дело в JSON (бэкап)">JSON↓</button>
+      <button id="btnDeleteCase" class="mini danger" title="Удалить дело">Удалить</button>
+    </span>
+  </div>
+  <div class="casebar-docs">
+    <div class="docchips" id="docChips"></div>
+    <div class="adddoc-wrap">
+      <button id="btnAddDoc" class="mini" title="Добавить документ в дело">+ Документ ▾</button>
+      <div class="adddoc-menu" id="addDocMenu" hidden></div>
+    </div>
+  </div>
+</div>
 
 <main class="layout">
   <section class="forms">
-    <details class="card profile" open>
+    <details class="card profile">
       <summary>Постоянные данные <span class="hint">сохраняются для всех документов</span></summary>
       <div id="profileForm"></div>
     </details>
@@ -59,5 +83,18 @@
 <footer class="foot">
   <span>Данные хранятся локально в браузере (localStorage). Для работы нужен интернет (загрузка компилятора Typst с CDN).</span>
 </footer>
+
+<div class="modal-overlay" id="modalOverlay" hidden>
+  <div class="modal" role="dialog" aria-modal="true">
+    <h3 id="modalTitle">Новое дело</h3>
+    <div class="field"><label>Название <span class="req">*</span></label><input type="text" id="modalName" maxlength="120"></div>
+    <div class="field"><label>Краткое описание</label><textarea id="modalDescr" maxlength="500"></textarea></div>
+    <div class="modal-row">
+      <button id="modalOk" class="primary">Сохранить</button>
+      <button id="modalCancel">Отмена</button>
+    </div>
+  </div>
+</div>
+<input type="file" id="importCaseFile" accept="application/json,.json" hidden>
 </body>
 </html>
