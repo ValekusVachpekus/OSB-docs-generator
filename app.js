@@ -11,7 +11,7 @@ const LS_TEMPLATE = 'osb_template_v1';
 const LS_CASES = 'osb_cases_v1';
 const LS_ACTIVE = 'osb_active_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Отстранение (beta)', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса' };
+const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Отстранение (beta)', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в ОСБ' };
 const LIBERATION_FONTS = ['Regular', 'Bold', 'Italic', 'BoldItalic'];
 
 /* Ключи DATA-блока каждого шаблона — должны 1-в-1 совпадать с #let v-* в templates/*.typ.
@@ -60,6 +60,12 @@ const DATA_KEYS = {
     'v-q1','v-a1','v-q2','v-a2','v-q3','v-a3','v-q4','v-a4','v-q5','v-a5',
     'v-q6','v-a6','v-q7','v-a7','v-q8','v-a8','v-q9','v-a9','v-qa-count',
     'v-has-sign','v-sign-width'],
+  zayavlenie: ['v-day','v-month-gen','v-month-num','v-year',
+    'v-boss-to','v-appl-fio','v-appl-birth','v-appl-address','v-appl-phone','v-appl-passport',
+    'v-target','v-event-date','v-event-place','v-content','v-request','v-appl-sign',
+    'v-num','v-accept-time','v-brief',
+    'v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
+    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-accept','v-show-seal'],
 };
 
 /* ---------- значения по умолчанию (пример заполнения) ---------- */
@@ -164,6 +170,19 @@ const DEFAULT_DOCS = {
     a2: 'Нет, о таких фактах мне ничего не известно.',
     q3: '', a3: '', q4: '', a4: '', q5: '', a5: '',
     q6: '', a6: '', q7: '', a7: '', q8: '', a8: '', q9: '', a9: '', qa_count: 9 },
+  zayavlenie: { boss_to: 'Начальнику отдела собственной безопасности ГУ МВД по Нижегородской области подполковнику полиции Леонову Д.С.',
+    appl_fio: 'Петров Пётр Петрович', appl_birth: '1 января 1990 года',
+    appl_address: 'г. Арзамас, ул. Ленина, д. 10, кв. 5',
+    appl_phone: '+7 (900) 000-00-00',
+    appl_passport: 'Паспорт 22 00 000000, выдан ОВД г. Арзамаса 01.02.2010',
+    target: 'инспектора ОБ ДПС лейтенанта полиции Иванова Ивана Ивановича',
+    event_date: '2026-10-01', event_place: 'г. Арзамас, ул. Советская, д. 1',
+    content: '1 октября 2026 года около 10 часов 00 минут указанный сотрудник остановил мой автомобиль и потребовал передать ему денежные средства за несоставление протокола. Данные обстоятельства могут подтвердить очевидцы.',
+    request: 'Прошу провести служебную проверку и привлечь виновных к ответственности',
+    brief: 'нарушение служебной дисциплины сотрудником ОБ ДПС',
+    appl_sign: 'Петров',
+    date: '2026-10-12', num: '0025', accept_time: '12:00',
+    show_accept: true, show_seal: true },
 };
 
 /* ---------- схемы форм ---------- */
@@ -426,6 +445,41 @@ const DOC_SCHEMAS = {
       { k: 'a9', label: 'Ответ 9', type: 'textarea' },
     ]},
   ],
+  zayavlenie: [
+    { title: 'Кому и от кого', fields: [
+      { k: 'boss_to', label: 'Кому адресовано', type: 'textarea', req: 1,
+        sub: 'Например: Начальнику ОСБ ГУ МВД … Леонову Д.С.' },
+      { k: 'appl_fio', label: 'ФИО заявителя (именит. падеж)', type: 'text', req: 1,
+        sub: 'Например: Петров Пётр Петрович' },
+      { k: 'appl_birth', label: 'Дата рождения', type: 'text', sub: 'Например: 1 января 1990 года' },
+      { k: 'appl_address', label: 'Адрес заявителя', type: 'text' },
+      { k: 'appl_phone', label: 'Телефон заявителя', type: 'text' },
+      { k: 'appl_passport', label: 'Паспортные данные', type: 'text' },
+    ]},
+    { title: 'Суть заявления', fields: [
+      { k: 'target', label: 'В отношении кого (сотрудник)', type: 'textarea', req: 1,
+        sub: 'Например: инспектора ОБ ДПС лейтенанта полиции Иванова И.И.' },
+      { k: 'event_date', label: 'Дата события', type: 'date' },
+      { k: 'event_place', label: 'Место события', type: 'text' },
+      { k: 'content', label: 'Обстоятельства (что произошло)', type: 'textarea', req: 1 },
+      { k: 'request', label: 'Просьба', type: 'textarea',
+        sub: 'Например: провести служебную проверку и привлечь к ответственности' },
+      { k: 'brief', label: 'Краткое содержание для корешка', type: 'text',
+        sub: 'Пусто — в корешок пойдёт начало сути заявления' },
+      { k: 'appl_sign', label: 'Подпись заявителя (фамилия текстом)', type: 'text' },
+    ]},
+    { title: 'Регистрация и корешок', fields: [
+      { k: 'date', label: 'Дата заявления', type: 'date', req: 1 },
+      { k: 'num', label: 'Номер (один на заявление и корешок)', type: 'text', req: 1,
+        sub: 'Например: 0025. В заявлении — КУСП №0025, в талоне — №0025/ТКТУ' },
+      { k: 'accept_time', label: 'Время приёма', type: 'time',
+        sub: 'Корешок-талон соберётся автоматически на 2-й странице из этих данных' },
+    ]},
+    { title: 'Подпись и печать', fields: [
+      { k: 'show_accept', label: 'Подпись принявшего (из постоянных данных)', type: 'check' },
+      { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
+    ]},
+  ],
 };
 
 /* ---------- состояние ---------- */
@@ -439,6 +493,7 @@ const state = {
     unsp: loadLS(LS_DRAFT('unsp'), structuredClone(DEFAULT_DOCS.unsp)),
     uksp: loadLS(LS_DRAFT('uksp'), structuredClone(DEFAULT_DOCS.uksp)),
     protokol_oprosa: loadLS(LS_DRAFT('protokol_oprosa'), structuredClone(DEFAULT_DOCS.protokol_oprosa)),
+    zayavlenie: loadLS(LS_DRAFT('zayavlenie'), structuredClone(DEFAULT_DOCS.zayavlenie)),
   },
   cases: [],
   active: { mode: 'free', caseId: null, docId: null },
@@ -1129,6 +1184,24 @@ function buildData() {
     D['v-q8'] = d.q8 || ''; D['v-a8'] = d.a8 || '';
     D['v-q9'] = d.q9 || ''; D['v-a9'] = d.a9 || '';
     D['v-qa-count'] = Math.min(9, Math.max(1, Math.trunc(+d.qa_count) || 9));
+  } else if (t === 'zayavlenie') {
+    D['v-boss-to'] = d.boss_to || '';
+    D['v-appl-fio'] = d.appl_fio || '';
+    D['v-appl-birth'] = d.appl_birth || '';
+    D['v-appl-address'] = d.appl_address || '';
+    D['v-appl-phone'] = d.appl_phone || '';
+    D['v-appl-passport'] = d.appl_passport || '';
+    D['v-target'] = d.target || '';
+    D['v-event-date'] = dotsDate(d.event_date);
+    D['v-event-place'] = d.event_place || '';
+    D['v-content'] = d.content || '';
+    D['v-request'] = d.request || '';
+    D['v-appl-sign'] = d.appl_sign || '';
+    D['v-num'] = d.num || '';
+    D['v-accept-time'] = d.accept_time || '';
+    D['v-brief'] = cleanWs(d.brief) || cleanWs(d.content).slice(0, 140);
+    D['v-show-accept'] = !!d.show_accept; D['v-show-seal'] = !!d.show_seal;
+    D['v-has-seal-img'] = sealReady;
   }
   if (D['v-sogl-osb-day'] === undefined) { put('sogl-osb', d.sogl_osb_date); put('sogl-gu', d.sogl_gu_date); put('vruch', d.vruch_date); }
   const missing = DATA_KEYS[t].filter(k => !(k in D));
@@ -1487,7 +1560,7 @@ function renderCasesMenu() {
   free.innerHTML = '';
   const fm = document.createElement('span');
   fm.className = 'cm-main';
-  fm.innerHTML = `<div class="cm-title">📄 Вне дел (просто документы)</div><div class="cm-sub">6 черновиков без привязки к делу</div>`;
+  fm.innerHTML = `<div class="cm-title">📄 Вне дел (просто документы)</div><div class="cm-sub">7 черновиков без привязки к делу</div>`;
   free.append(fm);
   free.onclick = () => { setActiveFree(); hideCasesMenu(); };
   m.append(free);
