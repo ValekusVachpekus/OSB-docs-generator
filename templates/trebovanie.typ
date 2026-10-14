@@ -96,7 +96,34 @@
 #let v-show-sogl-osb = true
 #let v-show-sogl-gu = true
 #let v-show-vruch = true
+#let v-show-disclaimer = true
 // </OSB-DATA>
+
+// --- Печать-дисклеймер (ролевой отыгрыш, угол справа вверху) ---
+// ВНИМАНИЕ: топ-уровневый place считается от текстовой области (внутри полей),
+// поэтому для выхода в поля используются dx/dy за её пределы:
+// правое поле 15мм (текст кончается на 195мм) + верхнее поле 20мм.
+// dx: 14мм -> правый край печати в 1мм от края листа; dy: -19мм -> верх в 1мм от края.
+#if v-show-disclaimer [
+  #place(top + right, dx: 10mm, dy: -15mm)[
+    #rect(
+      width: 58mm,
+      inset: 4pt,
+      stroke: 0.6pt + blue.darken(20%),
+      fill: white.transparentize(40%),
+      [
+        #set align(center)
+        #set text(size: 7pt, fill: blue.darken(30%))
+        #set par(first-line-indent: 0pt, justify: false, leading: 0.4em)
+        Для ролевого отыгрыша на Amazing Online, \
+        не имеет юридической силы.
+        #v(2pt)
+        #set text(size: 6.5pt)
+        Автор шаблона: Vladislav_Shetkov
+      ]
+    )
+  ]
+]
 
 // --- Шапка документа ---
 #align(center)[

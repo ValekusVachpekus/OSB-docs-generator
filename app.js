@@ -33,7 +33,7 @@ const DATA_KEYS = {
     'v-sogl-osb-post','v-sogl-osb-rank','v-sogl-osb-day','v-sogl-osb-month-gen','v-sogl-osb-year','v-sogl-osb-sign','v-sogl-osb-fio',
     'v-sogl-gu-post','v-sogl-gu-rank','v-sogl-gu-day','v-sogl-gu-month-gen','v-sogl-gu-year','v-sogl-gu-sign','v-sogl-gu-fio',
     'v-vruch-day','v-vruch-month-gen','v-vruch-year','v-vruch-time','v-vruch-sign','v-vruch-fio',
-    'v-has-gerb','v-has-sign','v-sign-width','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch'],
+    'v-has-gerb','v-has-sign','v-sign-width','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch','v-show-disclaimer'],
   proverka: ['v-day','v-month-gen','v-month-num','v-year','v-city','v-num','v-target-title','v-supervision',
     'v-violation','v-check-num','v-suspend-word','v-suspend-target','v-notify-fio',
     'v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
@@ -128,6 +128,7 @@ const DEFAULT_DOCS = {
     deadline: '2026-04-14', demand_article: 'ст. 13.6 КоАП РФ',
     auto: 'BMW M4 G83 (ГРЗ С003ХА 06)', liability: 'ст. 20.6 КоАП РФ',
     acq_post: 'Инспектор ОБ ДПС Юрий Ингушев', acq_sign: 'Ингушев', acq_short: 'Ю.С. Ингушев',
+    show_disclaimer: true,
     ...structuredClone(STAMPS_DEF) },
   proverka: { date: '2026-04-02', city: 'г. Арзамас', num: '33',
     subj_post_rod: 'сотрудника ОБ ДПС ГАИ', subj_rank: 'младший сержант полиции',
@@ -254,6 +255,7 @@ const DOC_SCHEMAS = {
       { k: 'acq_short', label: 'ФИО кратко', type: 'text' },
     ]},
     { title: 'Печати и штампы', fields: [
+      { k: 'show_disclaimer', label: 'Поставить печать «Для ролевого отыгрыша»', type: 'check' },
       { k: 'show_bottom_sign', label: 'Поставить свою подпись внизу', type: 'check' },
       ...stampFields('sogl_osb', 'Согласовано ОСБ'),
       ...stampFields('sogl_gu', 'Согласовано ГУ'),
@@ -1120,6 +1122,7 @@ function buildData() {
     D['v-deadline-text'] = deadlineText(d.deadline); D['v-demand-article'] = d.demand_article;
     D['v-auto'] = d.auto; D['v-liability'] = d.liability;
     D['v-acq-post'] = d.acq_post; D['v-acq-sign'] = d.acq_sign; D['v-acq-short'] = d.acq_short;
+    D['v-show-disclaimer'] = d.show_disclaimer !== false;
     D['v-vruch-sign'] = d.acq_sign || ''; D['v-vruch-fio'] = d.acq_short || d.acq_post || '';
   } else if (t === 'proverka') {
     D['v-num'] = d.num; D['v-target-title'] = d.target_title; D['v-supervision'] = d.supervision;
