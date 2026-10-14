@@ -1,101 +1,145 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ОСБ — редактор документов</title>
-<link rel="stylesheet" href="style.css">
-<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-<script>window.__pdfWorkerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";</script>
-<script type="module" src="https://cdn.jsdelivr.net/npm/@myriaddreamin/typst.ts@0.7.0/dist/esm/contrib/all-in-one-lite.bundle.js" id="typst"></script>
-<script src="assets/gerb.js" defer></script>
-<script src="assets/sign-default.js" defer></script>
-<script src="assets/seal.js" defer></script>
-<script src="assets/fonts.js" defer></script>
-<script src="templates.js" defer></script>
-<script src="app.js" defer></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light">
+  <title>ОСБ — Редактор служебных документов</title>
+
+  <!-- Шрифты для строгого ведомственного интерфейса -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+
+  <!-- Основные стили -->
+  <link rel="stylesheet" href="style.css">
+
+  <!-- PDF.js и Typst Bundle -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script>
+    window.__pdfWorkerSrc = "https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js";
+  </script>
+  <script type="module" src="https://cdn.jsdelivr.net/npm/@myriaddreamin/typst.ts@0.7.0/dist/esm/contrib/all-in-one-lite.bundle.js" id="typst"></script>
+
+  <!-- Ресурсы и логика приложения -->
+  <script src="assets/gerb.js" defer></script>
+  <script src="assets/sign-default.js" defer></script>
+  <script src="assets/seal.js" defer></script>
+  <script src="assets/fonts.js" defer></script>
+  <script src="templates.js" defer></script>
+  <script src="app.js" defer></script>
 </head>
 <body>
-<header class="topbar">
-  <div class="brand">ОСБ <span>· Автор: Vladislav_Shetkov</span></div>
-  <nav class="tabs" id="templateTabs" role="tablist" aria-label="Выбор шаблона">
-    <button data-t="trebovanie" role="tab">Требование (beta)</button>
-    <button data-t="proverka" role="tab">Постановление на СП</button>
-    <button data-t="otstranenie" role="tab">Отстранение (beta)</button>
-    <button data-t="unsp" role="tab">Уведомление о начале СП</button>
-    <button data-t="uksp" role="tab">Уведомление об окончании СП</button>
-    <button data-t="protokol_oprosa" role="tab">Протокол опроса</button>
-    <button data-t="zayavlenie" role="tab">Заявление в ОСБ</button>
-  </nav>
-  <div class="topright">
-    <button id="btnCases" class="cases-btn" title="Дела: создать, открыть, удалить">📁 Вне дел ▾</button>
-    <div class="status" id="status">Загрузка…</div>
-  </div>
-  <div class="cases-menu" id="casesMenu" hidden></div>
-</header>
 
-<div class="casebar" id="caseBar" hidden>
-  <div class="casebar-top">
-    <button id="btnBackFree" class="mini" title="Вернуться к простым документам без дел">← Вне дел</button>
-    <span class="casebar-title" id="caseTitle"></span>
-    <span class="casebar-descr" id="caseDescr"></span>
-    <span class="casebar-actions">
-      <button id="btnRenameCase" class="mini" title="Переименовать дело">✎</button>
-      <button id="btnExportCase" class="mini" title="Скачать дело в JSON (бэкап)">JSON↓</button>
-      <button id="btnDeleteCase" class="mini danger" title="Удалить дело">Удалить</button>
-    </span>
-  </div>
-  <div class="casebar-docs">
-    <div class="docchips" id="docChips"></div>
-    <div class="adddoc-wrap">
-      <button id="btnAddDoc" class="mini" title="Добавить документ в дело">+ Документ ▾</button>
-      <div class="adddoc-menu" id="addDocMenu" hidden></div>
+  <!-- Верхняя ведомственная панель -->
+  <header class="topbar">
+    <div class="brand" title="Отдел собственной безопасности — система подготовки документов">
+      ОСБ <span>· Автор: Vladislav_Shetkov</span>
+    </div>
+
+    <nav class="tabs" id="templateTabs" role="tablist" aria-label="Выбор шаблона">
+      <button type="button" data-t="trebovanie" role="tab">Требование (beta)</button>
+      <button type="button" data-t="proverka" role="tab">Постановление на СП</button>
+      <button type="button" data-t="otstranenie" role="tab">Отстранение (beta)</button>
+      <button type="button" data-t="unsp" role="tab">Уведомление о начале СП</button>
+      <button type="button" data-t="uksp" role="tab">Уведомление об окончании СП</button>
+      <button type="button" data-t="protokol_oprosa" role="tab">Протокол опроса</button>
+      <button type="button" data-t="zayavlenie" role="tab">Заявление в ОСБ</button>
+    </nav>
+
+    <div class="topright">
+      <button type="button" id="btnCases" class="cases-btn" title="Дела: создать, открыть, удалить">📁 Вне дел ▾</button>
+      <div class="status" id="status" role="status" aria-live="polite">Загрузка…</div>
+    </div>
+
+    <div class="cases-menu" id="casesMenu" hidden></div>
+  </header>
+
+  <!-- Панель управления активным делом -->
+  <div class="casebar" id="caseBar" hidden>
+    <div class="casebar-top">
+      <button type="button" id="btnBackFree" class="mini" title="Вернуться к простым документам без дел">← Вне дел</button>
+      <span class="casebar-title" id="caseTitle"></span>
+      <span class="casebar-descr" id="caseDescr"></span>
+      <span class="casebar-actions">
+        <button type="button" id="btnRenameCase" class="mini" title="Переименовать дело">✎ Переименовать</button>
+        <button type="button" id="btnExportCase" class="mini" title="Скачать дело в JSON (бэкап)">JSON ↓</button>
+        <button type="button" id="btnDeleteCase" class="mini danger" title="Удалить дело">Удалить</button>
+      </span>
+    </div>
+
+    <div class="casebar-docs">
+      <div class="docchips" id="docChips"></div>
+      <div class="adddoc-wrap">
+        <button type="button" id="btnAddDoc" class="mini" title="Добавить документ в дело">+ Документ ▾</button>
+        <div class="adddoc-menu" id="addDocMenu" hidden></div>
+      </div>
     </div>
   </div>
-</div>
 
-<main class="layout">
-  <section class="forms">
-    <details class="card profile">
-      <summary>Постоянные данные <span class="hint">сохраняются для всех документов</span></summary>
-      <div id="profileForm"></div>
-    </details>
-    <div id="docForm"></div>
-  </section>
+  <!-- Основная рабочая область -->
+  <main class="layout">
+    <!-- Левая панель: реквизиты и поля документа -->
+    <section class="forms" aria-label="Параметры документа">
+      <details class="card profile">
+        <summary>
+          Постоянные данные
+          <span class="hint">сохраняются для всех документов</span>
+        </summary>
+        <div id="profileForm"></div>
+      </details>
 
-  <div class="splitter" id="splitter" title="Потяните, чтобы изменить ширину панелей"></div>
+      <div id="docForm"></div>
+    </section>
 
-  <section class="preview-pane">
-    <div class="toolbar">
-      <button id="btnPdf" class="primary" disabled>Скачать PDF</button>
-      <button id="btnJpg" disabled>Скачать JPG</button>
-      <button id="btnTyp" disabled>Скачать .typ</button>
-      <span class="sep"></span>
-      <button id="btnFill" title="Заполнить форму примером">Пример</button>
-      <button id="btnClear" title="Очистить текущий документ">Очистить</button>
-    </div>
-    <div class="error" id="errorBox" hidden></div>
-    <div class="pages" id="pages">
-      <div class="placeholder">Предпросмотр появится после загрузки компилятора Typst…</div>
-    </div>
-  </section>
-</main>
+    <!-- Разделитель панелей -->
+    <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" title="Потяните, чтобы изменить ширину панелей"></div>
 
-<footer class="foot">
-  <span>Данные хранятся локально в браузере (localStorage). Для работы нужен интернет (загрузка компилятора Typst с CDN).</span>
-</footer>
+    <!-- Правая панель: предпросмотр и экспорт -->
+    <section class="preview-pane" aria-label="Предпросмотр документа">
+      <div class="toolbar">
+        <button type="button" id="btnPdf" class="primary" disabled>Скачать PDF</button>
+        <button type="button" id="btnJpg" disabled>Скачать JPG</button>
+        <button type="button" id="btnTyp" disabled>Скачать .typ</button>
+        <span class="sep" aria-hidden="true"></span>
+        <button type="button" id="btnFill" title="Заполнить форму примером">Пример</button>
+        <button type="button" id="btnClear" class="danger-subtle" title="Очистить текущий документ">Очистить</button>
+      </div>
 
-<div class="modal-overlay" id="modalOverlay" hidden>
-  <div class="modal" role="dialog" aria-modal="true">
-    <h3 id="modalTitle">Новое дело</h3>
-    <div class="field"><label>Название <span class="req">*</span></label><input type="text" id="modalName" maxlength="120"></div>
-    <div class="field"><label>Краткое описание</label><textarea id="modalDescr" maxlength="500"></textarea></div>
-    <div class="modal-row">
-      <button id="modalOk" class="primary">Сохранить</button>
-      <button id="modalCancel">Отмена</button>
+      <div class="error" id="errorBox" role="alert" hidden></div>
+
+      <div class="pages" id="pages">
+        <div class="placeholder">Предпросмотр появится после загрузки компилятора Typst…</div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Нижний колонтитул -->
+  <footer class="foot">
+    <span>Данные хранятся локально в браузере (localStorage). Для работы требуется подключение к сети (загрузка компилятора Typst с CDN).</span>
+  </footer>
+
+  <!-- Модальное окно создания/редактирования дела -->
+  <div class="modal-overlay" id="modalOverlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+      <h3 id="modalTitle">Новое дело</h3>
+      <div class="field">
+        <label for="modalName">Название <span class="req">*</span></label>
+        <input type="text" id="modalName" maxlength="120" placeholder="Например: СП № 14/2026 — Иванов И.И." autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="modalDescr">Краткое описание</label>
+        <textarea id="modalDescr" maxlength="500" rows="3" placeholder="Фабула, проверяемое подразделение или примечания…"></textarea>
+      </div>
+      <div class="modal-row">
+        <button type="button" id="modalCancel">Отмена</button>
+        <button type="button" id="modalOk" class="primary">Сохранить</button>
+      </div>
     </div>
   </div>
-</div>
-<input type="file" id="importCaseFile" accept="application/json,.json" hidden>
+
+  <!-- Скрытый инпут для импорта JSON -->
+  <input type="file" id="importCaseFile" accept="application/json,.json" hidden>
+
 </body>
 </html>

@@ -12,6 +12,8 @@ const LS_CASES = 'osb_cases_v1';
 const LS_ACTIVE = 'osb_active_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
 const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Отстранение (beta)', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в ОСБ' };
+/* Краткая информация о документе (иконка ⓘ в заголовке). Тексты будут добавлены позже. */
+const DOC_INFO = { trebovanie: '', proverka: '', otstranenie: '', unsp: '', uksp: '', protokol_oprosa: '', zayavlenie: '' };
 const LIBERATION_FONTS = ['Regular', 'Bold', 'Italic', 'BoldItalic'];
 
 /* Ключи DATA-блока каждого шаблона — должны 1-в-1 совпадать с #let v-* в templates/*.typ.
@@ -996,7 +998,28 @@ function renderDoc() {
   const ht = document.createElement('h3');
   ht.textContent = title;
   ht.style.marginTop = '0';
-  head.append(ht);
+  ht.style.flex = '1';
+  const topRow = document.createElement('div');
+  topRow.className = 'dochead-top';
+  topRow.append(ht);
+  const infoBtn = document.createElement('button');
+  infoBtn.type = 'button';
+  infoBtn.className = 'info-btn';
+  infoBtn.textContent = 'ⓘ';
+  infoBtn.title = 'Информация о документе';
+  infoBtn.setAttribute('aria-label', 'Информация о документе');
+  infoBtn.setAttribute('aria-expanded', 'false');
+  topRow.append(infoBtn);
+  head.append(topRow);
+  const infoBox = document.createElement('div');
+  infoBox.className = 'docinfo';
+  infoBox.hidden = true;
+  infoBox.textContent = DOC_INFO[tpl] || 'Информация об этом документе появится здесь позже.';
+  head.append(infoBox);
+  infoBtn.onclick = () => {
+    infoBox.hidden = !infoBox.hidden;
+    infoBtn.setAttribute('aria-expanded', String(!infoBox.hidden));
+  };
   if (state.active.mode === 'case' && ref) {
     const row = document.createElement('div');
     row.className = 'row';
