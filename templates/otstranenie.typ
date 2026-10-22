@@ -1,6 +1,6 @@
 #set text(font: ("Liberation Serif", "DejaVu Serif"), size: 12pt, lang: "ru")
 #set page(
-  margin: (top: 2cm, bottom: 2cm, left: 3cm, right: 1.5cm),
+  margin: (top: 2cm, bottom: 2cm, left: 2cm, right: 1cm),
   fill: rgb("FBFBFB"),
   background: {
     let grain_tile = tiling(size: (0.4mm, 0.4mm))[
@@ -46,8 +46,8 @@
 )
 #set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
 
-// Функция для создания пустой линии (поля для заполнения)
-#let field(width) = box(width: width, stroke: (bottom: 0.5pt), inset: (bottom: -2pt))
+// Абзацы из многострочного поля: каждая непустая строка — отдельный абзац.
+#let v-lines(text) = text.split("\n").map(l => l.trim()).filter(l => l != "").map(l => par(l)).join()
 
 // <OSB-DATA>
 #let v-day = "12"
@@ -56,11 +56,11 @@
 #let v-year = "2026"
 #let v-city = "г. Арзамас"
 #let v-num = "34"
-#let v-subject = "младшего сержанта полиции Молотова А.А."
-#let v-subject-gen = "со стороны младшего сержанта полиции Молотова А.А."
-#let v-officer-rank-full = "заместителем начальника ОСБ подполковником полиции Щетковым В.А."
-#let v-ustav-article = "12"
-#let v-check-num = "33"
+#let v-about = "О временном отстранении от службы сотрудника"
+#let v-intro = "В ходе проведения служебной проверки, мною, заместителем начальника ОСБ подполковником полиции Щетковым В.А., были выявлены признаки дисциплинарного правонарушения."
+#let v-show-ustanovil = true
+#let v-ustanovil = "Вышеуказанные действия сотрудника нарушают требования Внутреннего Устава ОВД."
+#let v-prikaz = "1. Отстранить сотрудника от исполнения должностных обязанностей на период проведения служебной проверки.\n2. Обязать отстраняемого сотрудника сдать табельное оружие, спецсредства и служебное удостоверение на временное хранение в дежурную часть управления.\n3. Контроль за исполнением настоящего приказа оставляю за собой."
 #let v-officer-post = "Заместитель начальника ОСБ ГУ МВД"
 #let v-officer-rank = "майор полиции"
 #let v-officer-full = "Щетков Владислав Алексеевич"
@@ -86,10 +86,17 @@
 #let v-vruch-time = "00:00"
 #let v-vruch-sign = "ПОДПИСЬ"
 #let v-vruch-fio = "Иванов Иван Иванович"
+#let v-seal-l1 = "ОТДЕЛ"
+#let v-seal-l2 = "СОБСТВЕННОЙ"
+#let v-seal-l3 = "БЕЗОПАСНОСТИ"
+#let v-seal-l4 = "* ГУ МВД *"
 #let v-has-gerb = true
 #let v-has-sign = true
+#let v-has-seal-img = true
+#let v-show-copy = true
 #let v-sign-width = 25mm
 #let v-show-bottom-sign = true
+#let v-show-seal = true
 #let v-show-sogl-osb = true
 #let v-show-sogl-gu = true
 #let v-show-vruch = true
@@ -100,7 +107,7 @@
   #if v-has-gerb [#block(width: 1.5cm)[#image("/gerb.svg")]]
   #v(0.2em)
   #set text(size: 10pt)
-  #upper[Министерство внутренних дел Российской Федерации] \
+  #upper[Министерство внутренних дел] \
   #set text(size: 11pt, weight: "bold")
   ОТДЕЛ СОБСТВЕННОЙ БЕЗОПАСНОСТИ ГУ МВД \ ПО НИЖЕГОРОДСКОЙ ОБЛАСТИ
 
@@ -126,67 +133,70 @@
   gutter: 1cm,
   align(left + top)[
     #set par(first-line-indent: 0pt, justify: false)
-    #set text(size: 10pt)
-    О временном отстранении от службы сотрудника #v-subject в связи с проведением служебной проверки.
+    #set text(size: 11pt)
+    #v-about
   ],
   rotate(-1.5deg)[
     #move(dx: 5pt, dy: -10pt)[
-      #rect(
-        width: 100%,
-        inset: 6pt,
-        stroke: 0.7pt + blue.darken(20%),
-        fill: white.transparentize(40%),
-        [
-          #set align(left)
-          #set text(size: 7.5pt, fill: blue.darken(30%))
-          #align(center)[#text(size: 10pt, weight: "bold")[КОПИЯ ВЕРНА]]
-          #v(4pt)
-          #v-officer-post, #v-officer-rank #v-officer-full
+      #if v-show-copy [
+        #rect(
+          width: 100%,
+          inset: 6pt,
+          stroke: 0.7pt + blue.darken(20%),
+          fill: white.transparentize(40%),
+          [
+            #set align(left)
+            #set text(size: 7.5pt, fill: blue.darken(30%))
+            #align(center)[#text(size: 10pt, weight: "bold")[КОПИЯ ВЕРНА]]
+            #v(4pt)
+            #v-officer-post, #v-officer-rank #v-officer-full
 
-          #v(8pt)
-          #grid(
-            columns: (1fr, 1.2fr),
-            align(bottom)[«\_#v-day\_» \_#v-month-num\_ #v-year г.],
-            align(bottom + right)[
-              #if v-has-sign [
-                #stack(
-                  dir: ltr,
-                  spacing: 2pt,
-                  block(width: 1.4cm)[#image("/sign.png")],
-                  [#v-officer-short]
-                )
-              ] else [
-                #v-officer-short
+            #v(8pt)
+            #grid(
+              columns: (1fr, 1.2fr),
+              align(bottom)[«\_#v-day\_» \_#v-month-num\_ #v-year г.],
+              align(bottom + right)[
+                #if v-has-sign [
+                  #stack(
+                    dir: ltr,
+                    spacing: 2pt,
+                    block(width: 1.4cm)[#image("/sign.png")],
+                    [#v-officer-short]
+                  )
+                ] else [
+                  #v-officer-short
+                ]
               ]
-            ]
-          )
-        ]
-      )
+            )
+          ]
+        )
+      ]
     ]
   ]
 )
 
-#v(1.2em)
+#v(1.5em)
 
-В ходе проведения служебной проверки, мною, #v-officer-rank-full, были выявлены признаки дисциплинарного правонарушения #v-subject-gen.
+#if v-intro.trim() != "" [
+  #v-lines(v-intro)
+  #v(1em)
+]
 
-#v(0.5em)
-#align(center)[#text(weight: "bold")[У С Т А Н О В И Л:]]
-#v(0.5em)
+#if v-show-ustanovil [
+  #align(center)[#text(weight: "bold")[У С Т А Н О В И Л:]]
+  #v(0.5em)
+  #if v-ustanovil.trim() != "" [#v-lines(v-ustanovil)]
+  #v(1em)
+]
 
-Вышеуказанные действия сотрудника нарушают требования статьи #v-ustav-article Внутреннего Устава ОВД и ....
-
-На основании ст. 18 ч. 4 п. 8 Федерального закона "О полиции", служебной проверки №#v-check-num, а также в целях обеспечения объективности проведения служебной проверки —
-
-#v(0.5em)
 #align(center)[#text(weight: "bold")[П Р И К А З Ы В А Ю:]]
 #v(0.5em)
 
-#set enum(indent: 1.25cm)
-+ Отстранить #v-subject от исполнения должностных обязанностей на период проведения служебной проверки № #v-check-num.
-+ Обязать отстраняемого сотрудника сдать табельное оружие, спецсредства и служебное удостоверение на временное хранение в дежурную часть управления.
-+ Запретить указанному сотруднику использование служебного транспорта исполнение служебных обязанностей до момента окончания проверки.
-+ Контроль за исполнением настоящего приказа оставляю за собой.
+#if v-prikaz.trim() != "" [
+  #v-lines(v-prikaz)
+] else [
+  #v(1em)
+]
 
 #v(3em)
 // Подпись внизу документа
@@ -211,6 +221,32 @@
       ]
     ]
   )
+]
+
+// --- Круглая печать ---
+#if v-show-seal [
+  #place(top + left, dx: 126mm, dy: 212mm)[
+    #rotate(-8deg)[
+      #if v-has-seal-img [
+        #block(width: 36mm)[#image("/seal.png")]
+      ] else [
+        #box(width: 36mm, height: 36mm)[
+          #place(center)[#circle(radius: 17mm, stroke: 1.4pt + blue.darken(30%))]
+          #place(center)[#circle(radius: 12.5mm, stroke: 0.8pt + blue.darken(30%))]
+          #place(center)[
+            #align(center)[
+              #set text(size: 6pt, fill: blue.darken(30%))
+              #set par(first-line-indent: 0pt, leading: 0.5em)
+              #v-seal-l1 \
+              #v-seal-l2 \
+              #v-seal-l3 \
+              #v-seal-l4
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
 ]
 
 #if v-show-sogl-osb [
@@ -276,8 +312,8 @@
           #v(2pt)
           Дата: « #v-vruch-day » #v-vruch-month-gen #v-vruch-year г. \
           Время: #v-vruch-time \
-          Подпись получившего: #v-vruch-sign \
-          ФИО: #v-vruch-fio
+          Подпись получившего: #if v-vruch-sign.trim() != "" [#v-vruch-sign] else [\_\_\_\_\_\_\_\_] \
+          ФИО: #if v-vruch-fio.trim() != "" [#v-vruch-fio] else [\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_]
         ]
       )
     ]

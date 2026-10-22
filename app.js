@@ -11,12 +11,12 @@ const LS_TEMPLATE = 'osb_template_v1';
 const LS_CASES = 'osb_cases_v1';
 const LS_ACTIVE = 'osb_active_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Отстранение (beta)', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в ОСБ' };
+const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Приказ', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в ОСБ' };
 /* Краткая информация о документе (иконка ⓘ в заголовке). */
 const DOC_INFO = {
   trebovanie: 'Пока что в разработке.',
   proverka: 'Является основанием служебной проверки (СП): заполняются данные сотрудника, в отношении которого начата служебная проверка, а также описание действий, которые послужили её началом.',
-  otstranenie: 'Пока что в разработке.',
+  otstranenie: 'Универсальный приказ: заголовок «О чём», вводная часть, блок «Установил» (можно убрать галкой) и текст «Приказываю». Даты, подпись и штампы оформляются автоматически.',
   unsp: 'Документ, нужный для уведомления заинтересованных лиц о начале СП. Указываются обстоятельства происшествия, послужившего основанием СП, а также дата. Вручается заинтересованным лицам. (ООС: на форум в приёмную организации, либо в IC отыгровками вручается, копия — в ВК/TG.)',
   uksp: 'Документ, нужный для уведомления заинтересованных лиц об окончании СП. Указываются обстоятельства происшествия, послужившего основанием СП, установленные результаты проверки и дата. Вручается заинтересованным лицам. (ООС: на форум в приёмную организации, либо в IC отыгровками вручается, копия — в ВК/TG.)',
   protokol_oprosa: 'Протокол проведения опроса. Фиксируются данные опрашиваемого, вопросы и ответы на них. Вопросы и ответы записывать без потери смысла и вырывания из контекста.',
@@ -41,13 +41,15 @@ const DATA_KEYS = {
     'v-sogl-gu-post','v-sogl-gu-rank','v-sogl-gu-day','v-sogl-gu-month-gen','v-sogl-gu-year','v-sogl-gu-sign','v-sogl-gu-fio',
     'v-vruch-day','v-vruch-month-gen','v-vruch-year','v-vruch-time','v-vruch-sign','v-vruch-fio',
     'v-has-gerb','v-has-sign','v-sign-width','v-show-copy','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch'],
-  otstranenie: ['v-day','v-month-gen','v-month-num','v-year','v-city','v-num','v-subject','v-subject-gen',
-    'v-officer-rank-full','v-ustav-article','v-check-num',
+  otstranenie: ['v-day','v-month-gen','v-month-num','v-year','v-city','v-num',
+    'v-about','v-intro','v-show-ustanovil','v-ustanovil','v-prikaz',
     'v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
+    'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
     'v-sogl-osb-post','v-sogl-osb-rank','v-sogl-osb-day','v-sogl-osb-month-gen','v-sogl-osb-year','v-sogl-osb-sign','v-sogl-osb-fio',
     'v-sogl-gu-post','v-sogl-gu-rank','v-sogl-gu-day','v-sogl-gu-month-gen','v-sogl-gu-year','v-sogl-gu-sign','v-sogl-gu-fio',
     'v-vruch-day','v-vruch-month-gen','v-vruch-year','v-vruch-time','v-vruch-sign','v-vruch-fio',
-    'v-has-gerb','v-has-sign','v-sign-width','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch'],
+    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-copy','v-show-bottom-sign','v-show-seal',
+    'v-show-sogl-osb','v-show-sogl-gu','v-show-vruch'],
   unsp: ['v-date-dots','v-doc-num','v-show-reply','v-reply-num','v-reply-date',
     'v-addr-post','v-addr-rank','v-addr-fio','v-appeal','v-greet-fio',
     'v-points','v-check-start','v-postan-date',
@@ -141,9 +143,12 @@ const DEFAULT_DOCS = {
     suspend_target: 'младшего сержанта полиции Иванова А.А.', notify_fio: 'младшего сержанта полиции Иванова А.А.',
     ...structuredClone(STAMPS_DEF) },
   otstranenie: { date: '2026-04-12', city: 'г. Арзамас', num: '34',
-    subject: 'младшего сержанта полиции Молотова А.А.',
-    officer_rank_full: 'заместителем начальника ОСБ подполковником полиции Щетковым В.А.',
-    ustav_article: '12', check_num: '33',
+    about: 'О временном отстранении от службы сотрудника ОБ ДПС младшего сержанта полиции Молотова А.А.',
+    intro: 'В ходе проведения служебной проверки, мною, заместителем начальника ОСБ подполковником полиции Щетковым В.А., были выявлены признаки дисциплинарного правонарушения со стороны младшего сержанта полиции Молотова А.А.',
+    show_ustanovil: true,
+    ustanovil: 'Вышеуказанные действия сотрудника нарушают требования статьи 12 Внутреннего Устава ОВД.',
+    prikaz: '1. Отстранить младшего сержанта полиции Молотова А.А. от исполнения должностных обязанностей на период проведения служебной проверки № 33.\n2. Обязать отстраняемого сотрудника сдать табельное оружие, спецсредства и служебное удостоверение на временное хранение в дежурную часть управления.\n3. Контроль за исполнением настоящего приказа оставляю за собой.',
+    vruch_fio: '', vruch_sign: '', show_seal: true,
     ...structuredClone(STAMPS_DEF) },
   unsp: { date: '2026-10-01', doc_num: '0028-СП', reply_num: '', reply_date: '',
     addr_post: 'Инспектору СР ДПС', addr_rank: 'Лейтенанту полиции',
@@ -310,19 +315,31 @@ const DOC_SCHEMAS = {
       { k: 'date', label: 'Дата приказа', type: 'date', req: 1 },
       { k: 'city', label: 'Город', type: 'text', req: 1 },
       { k: 'num', label: 'Номер приказа', type: 'text', req: 1 },
-      { k: 'subject', label: 'Отстраняемый сотрудник', type: 'text', req: 1, sub: 'В винительном падеже: «младшего сержанта полиции Молотова А.А.». Фраза «со стороны …» подставится автоматически.' },
-      { k: 'officer_rank_full', label: 'Кем выявлены признаки', type: 'text', req: 1, sub: 'В творительном падеже: «заместителем начальника ОСБ … Щетковым В.А.»' },
-      { k: 'ustav_article', label: 'Статья Устава', type: 'text', req: 1 },
-      { k: 'check_num', label: '№ служебной проверки', type: 'text', req: 1 },
+      { k: 'about', label: 'О чём', type: 'textarea', req: 1,
+        sub: 'Короткий заголовок под датой: о чём издан приказ' },
+    ]},
+    { title: 'Содержание', fields: [
+      { k: 'intro', label: 'Вводная часть (перед «Установил»)', type: 'textarea',
+        sub: 'Необязательно. Каждая строка — отдельный абзац.' },
+      { k: 'show_ustanovil', label: 'Печатать блок «Установил»', type: 'check' },
+      { k: 'ustanovil', label: 'Установил (полный текст)', type: 'textarea', showIf: 'show_ustanovil',
+        sub: 'Каждая строка — отдельный абзац. Снимите галку выше, чтобы убрать блок целиком.' },
+      { k: 'prikaz', label: 'Приказываю (полный текст)', type: 'textarea', req: 1,
+        sub: 'Каждая строка — отдельный пункт или абзац. Нумерацию можно писать вручную.' },
     ]},
     { title: 'Печати и штампы', fields: [
+      { k: 'show_copy', label: 'Поставить штамп «Копия верна»', type: 'check' },
       { k: 'show_bottom_sign', label: 'Поставить свою подпись внизу', type: 'check' },
+      { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
       ...stampFields('sogl_osb', 'Согласовано ОСБ'),
       ...stampFields('sogl_gu', 'Согласовано ГУ'),
       { k: 'show_vruch', label: 'Поставить отметку о вручении', type: 'check' },
       { k: 'vruch_date', label: 'Дата вручения', type: 'date', showIf: 'show_vruch' },
-      { k: 'vruch_time', label: 'Время вручения', type: 'time', showIf: 'show_vruch',
-        sub: 'Получивший подставится из данных сотрудника автоматически' },
+      { k: 'vruch_time', label: 'Время вручения', type: 'time', showIf: 'show_vruch' },
+      { k: 'vruch_fio', label: 'ФИО получившего', type: 'text', showIf: 'show_vruch',
+        sub: 'В именительном падеже. Пусто — линия для заполнения от руки.' },
+      { k: 'vruch_sign', label: 'Подпись получившего (текст)', type: 'text', showIf: 'show_vruch',
+        sub: 'Например: Иванов. Пусто — линия для подписи от руки.' },
     ]},
   ],
   unsp: [
@@ -596,7 +613,17 @@ function setStatus(msg, isErr = false, ok = false) {
 }
 function showError(msg) { const b = $('#errorBox'); b.hidden = !msg; b.textContent = msg || ''; }
 function escTyp(s) {
-  return '"' + String(s ?? '').replace(/\s+/g, ' ').trim().replace(/\\/g, '\\\\').replace(/"/g, '\\"') + '"';
+  // Переводы строк сохраняем: многострочные поля печатаются отдельными абзацами.
+  const v = String(s ?? '')
+    .replace(/\r\n?/g, '\n')
+    .split('\n')
+    .map(line => line.replace(/[ \t]+/g, ' ').trim())
+    .join('\n')
+    .trim()
+    .replace(/\\/g, '\\\\')
+    .replace(/"/g, '\\"')
+    .replace(/\n/g, '\\n');
+  return '"' + v + '"';
 }
 function isoParts(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
@@ -1136,11 +1163,18 @@ function buildData() {
       ? cleanWs(`${d.subj_surname} ${d.subj_name} ${d.subj_patr}`)
       : cleanWs(`${d.subj_rank} ${d.subj_surname} ${d.subj_initials}`);
   } else if (t === 'otstranenie') {
-    D['v-num'] = d.num; D['v-subject'] = d.subject;
-    D['v-subject-gen'] = 'со стороны ' + (d.subject || '');
-    D['v-officer-rank-full'] = d.officer_rank_full;
-    D['v-ustav-article'] = d.ustav_article; D['v-check-num'] = d.check_num;
-    D['v-vruch-sign'] = nomSurname(genSurname(d.subject)); D['v-vruch-fio'] = nominativePhrase(d.subject);
+    D['v-num'] = d.num;
+    D['v-about'] = d.about || '';
+    D['v-intro'] = d.intro || '';
+    D['v-show-ustanovil'] = d.show_ustanovil !== false;
+    D['v-ustanovil'] = d.ustanovil || '';
+    D['v-prikaz'] = d.prikaz || '';
+    D['v-vruch-sign'] = d.vruch_sign || '';
+    D['v-vruch-fio'] = d.vruch_fio || '';
+    D['v-seal-l1'] = 'ОТДЕЛ'; D['v-seal-l2'] = 'СОБСТВЕННОЙ';
+    D['v-seal-l3'] = 'БЕЗОПАСНОСТИ'; D['v-seal-l4'] = '* ГУ МВД *';
+    D['v-show-seal'] = !!d.show_seal;
+    D['v-has-seal-img'] = sealReady;
   } else if (t === 'unsp') {
     D['v-date-dots'] = dotsDate(d.date); D['v-doc-num'] = d.doc_num || '';
     D['v-show-reply'] = !!(d.reply_num || d.reply_date);

@@ -87,6 +87,9 @@ def main():
         off["v-has-gerb"] = False
         off["v-subject"] = tricky if "v-subject" in off else off.get("v-violator", "")
         off["v-violator"] = tricky
+        for k in ("v-about", "v-intro", "v-ustanovil", "v-prikaz"):
+            if k in off:
+                off[k] = tricky
         if "v-suspend-word" in off:
             off["v-suspend-word"] = "не отстранять"
         ok &= compile_with(n, off, "minimal")
