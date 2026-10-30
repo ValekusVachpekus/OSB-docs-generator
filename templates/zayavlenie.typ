@@ -1,6 +1,6 @@
 #set text(font: ("Liberation Serif", "DejaVu Serif"), size: 12pt, lang: "ru")
 #set page(
-  margin: (top: 2cm, bottom: 2cm, left: 3cm, right: 1.5cm),
+  margin: (top: 2cm, bottom: 2cm, left: 2cm, right: 1cm),
   fill: rgb("FBFBFB"),
   background: {
     let grain_tile = tiling(size: (0.4mm, 0.4mm))[
@@ -51,7 +51,7 @@
 #let v-month-gen = "октября"
 #let v-month-num = "10"
 #let v-year = "2026"
-#let v-boss-to = "Начальнику отдела собственной безопасности ГУ МВД по Нижегородской области подполковнику полиции Леонову Д.С."
+#let v-boss-to = "Начальнику управления собственной безопасности ГУ МВД по Нижегородской области подполковнику полиции Леонову Д.С."
 #let v-appl-fio = "Петров Пётр Петрович"
 #let v-appl-birth = "1 января 1990 года"
 #let v-appl-address = "г. Арзамас, ул. Ленина, д. 10, кв. 5"
@@ -66,7 +66,7 @@
 #let v-num = "0025"
 #let v-accept-time = "12:00"
 #let v-brief = "нарушение служебной дисциплины сотрудником ОБ ДПС"
-#let v-officer-post = "Заместитель начальника отдела собственной безопасности ГУ МВД"
+#let v-officer-post = "Заместитель начальника управления собственной безопасности ГУ МВД"
 #let v-officer-rank = "майор полиции"
 #let v-officer-full = "Щетков Владислав Алексеевич"
 #let v-officer-short = "В.А. Щетков"
@@ -86,7 +86,7 @@
   #set text(size: 10pt)
   #upper[Министерство внутренних дел] \
   #set text(size: 11pt, weight: "bold")
-  ОТДЕЛ СОБСТВЕННОЙ БЕЗОПАСНОСТИ ГУ МВД \ ПО НИЖЕГОРОДСКОЙ ОБЛАСТИ
+  УПРАВЛЕНИЕ СОБСТВЕННОЙ БЕЗОПАСНОСТИ ГУ МВД \ ПО НИЖЕГОРОДСКОЙ ОБЛАСТИ
 
   #v(1em)
   #text(size: 18pt, weight: "bold", tracking: 0.4em)[ЗАЯВЛЕНИЕ]
@@ -177,7 +177,7 @@
             #align(center)[
               #set text(size: 6pt, fill: blue.darken(30%))
               #set par(first-line-indent: 0pt, leading: 0.5em)
-              ОТДЕЛ \
+              УПРАВЛЕНИЕ \
               СОБСТВЕННОЙ \
               БЕЗОПАСНОСТИ
             ]

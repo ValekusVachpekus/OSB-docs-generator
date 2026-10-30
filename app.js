@@ -1,5 +1,5 @@
 'use strict';
-/* ОСБ — редактор документов. Статика + Typst WASM (cdn) + pdf.js для превью/JPG. */
+/* УСБ — редактор документов. Статика + Typst WASM (cdn) + pdf.js для превью/JPG. */
 
 /* ---------- константы ---------- */
 const MONTHS_GEN = ['января','февраля','марта','апреля','мая','июня','июля','августа','сентября','октября','ноября','декабря'];
@@ -11,7 +11,7 @@ const LS_TEMPLATE = 'osb_template_v1';
 const LS_CASES = 'osb_cases_v1';
 const LS_ACTIVE = 'osb_active_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Приказ', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в ОСБ' };
+const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Приказ', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в УСБ' };
 /* Краткая информация о документе (иконка ⓘ в заголовке). */
 const DOC_INFO = {
   trebovanie: 'Пока что в разработке.',
@@ -20,7 +20,7 @@ const DOC_INFO = {
   unsp: 'Документ, нужный для уведомления заинтересованных лиц о начале СП. Указываются обстоятельства происшествия, послужившего основанием СП, а также дата. Вручается заинтересованным лицам. (ООС: на форум в приёмную организации, либо в IC отыгровками вручается, копия — в ВК/TG.)',
   uksp: 'Документ, нужный для уведомления заинтересованных лиц об окончании СП. Указываются обстоятельства происшествия, послужившего основанием СП, установленные результаты проверки и дата. Вручается заинтересованным лицам. (ООС: на форум в приёмную организации, либо в IC отыгровками вручается, копия — в ВК/TG.)',
   protokol_oprosa: 'Протокол проведения опроса. Фиксируются данные опрашиваемого, вопросы и ответы на них. Вопросы и ответы записывать без потери смысла и вырывания из контекста.',
-  zayavlenie: 'Заявление на сотрудника полиции в ОСБ о нарушении ВУ или законодательства. Пишутся данные заявителя и обстоятельства произошедшего, прилагаются видеозапись или иные доказательства. Заявителю выдаётся талон-уведомление.'
+  zayavlenie: 'Заявление на сотрудника полиции в УСБ о нарушении ВУ или законодательства. Пишутся данные заявителя и обстоятельства произошедшего, прилагаются видеозапись или иные доказательства. Заявителю выдаётся талон-уведомление.'
 };
 const LIBERATION_FONTS = ['Regular', 'Bold', 'Italic', 'BoldItalic'];
 
@@ -82,12 +82,12 @@ const DATA_KEYS = {
 
 /* ---------- значения по умолчанию (пример заполнения) ---------- */
 const DEFAULT_PROFILE = {
-  officer_post: 'Заместитель начальника отдела собственной безопасности ГУ МВД',
+  officer_post: 'Заместитель начальника управления собственной безопасности ГУ МВД',
   officer_rank: 'майор полиции',
   officer_full: 'Щетков Владислав Алексеевич',
   officer_short: 'В.А. Щетков',
   officer_phone: '5-6-5',
-  osb_post: 'Начальник ОСБ ГУ МВД', osb_rank: 'подполковник полиции',
+  osb_post: 'Начальник УСБ ГУ МВД', osb_rank: 'подполковник полиции',
   osb_full: 'Леонов Данила Сергеевич', osb_short: 'Д.С. Леонов', osb_sign: 'Леонов',
   gu_post: 'Начальник ГУ МВД', gu_rank: 'генерал-лейтенант полиции',
   gu_full: 'Егоров Дионис Иванович', gu_short: 'Д.И. Егоров', gu_sign: 'Егоров',
@@ -137,14 +137,14 @@ const DEFAULT_DOCS = {
     subj_sex: 'm', subj_surname: 'Иванов', subj_initials: 'А.А.',
     subj_name: 'Иван', subj_patr: 'Иванович',
     target_title: 'сотрудника ОБ ДПС ГАИ младшего сержанта полиции Иванова А.А.',
-    supervision: 'Заместитель начальника отдела собственной безопасности ГУ МВД, майор полиции Щетков Владислав Алексеевич, в ходе проведения надзорной деятельности за младшим сержантом полиции Ивановым А.А.',
+    supervision: 'Заместитель начальника управления собственной безопасности ГУ МВД, майор полиции Щетков Владислав Алексеевич, в ходе проведения надзорной деятельности за младшим сержантом полиции Ивановым А.А.',
     violation: 'Выявлены признаки нарушения служебной дисциплины',
     suspend: 'отстранить',
     suspend_target: 'младшего сержанта полиции Иванова А.А.', notify_fio: 'младшего сержанта полиции Иванова А.А.',
     ...structuredClone(STAMPS_DEF) },
   otstranenie: { date: '2026-04-12', city: 'г. Арзамас', num: '34',
     about: 'О временном отстранении от службы сотрудника ОБ ДПС младшего сержанта полиции Молотова А.А.',
-    intro: 'В ходе проведения служебной проверки, мною, заместителем начальника ОСБ подполковником полиции Щетковым В.А., были выявлены признаки дисциплинарного правонарушения со стороны младшего сержанта полиции Молотова А.А.',
+    intro: 'В ходе проведения служебной проверки, мною, заместителем начальника УСБ подполковником полиции Щетковым В.А., были выявлены признаки дисциплинарного правонарушения со стороны младшего сержанта полиции Молотова А.А.',
     show_ustanovil: true,
     ustanovil: 'Вышеуказанные действия сотрудника нарушают требования статьи 12 Внутреннего Устава ОВД.',
     prikaz: '1. Отстранить младшего сержанта полиции Молотова А.А. от исполнения должностных обязанностей на период проведения служебной проверки № 33.\n2. Обязать отстраняемого сотрудника сдать табельное оружие, спецсредства и служебное удостоверение на временное хранение в дежурную часть управления.\n3. Контроль за исполнением настоящего приказа оставляю за собой.',
@@ -186,7 +186,7 @@ const DEFAULT_DOCS = {
     a2: 'Нет, о таких фактах мне ничего не известно.',
     q3: '', a3: '', q4: '', a4: '', q5: '', a5: '',
     q6: '', a6: '', q7: '', a7: '', q8: '', a8: '', q9: '', a9: '', qa_count: 9 },
-  zayavlenie: { boss_to: 'Начальнику отдела собственной безопасности ГУ МВД по Нижегородской области подполковнику полиции Леонову Д.С.',
+  zayavlenie: { boss_to: 'Начальнику управления собственной безопасности ГУ МВД по Нижегородской области подполковнику полиции Леонову Д.С.',
     appl_fio: 'Петров Пётр Петрович', appl_birth: '1 января 1990 года',
     appl_address: 'г. Арзамас, ул. Ленина, д. 10, кв. 5',
     appl_phone: '+7 (900) 000-00-00',
@@ -203,14 +203,14 @@ const DEFAULT_DOCS = {
 
 /* ---------- схемы форм ---------- */
 const PROFILE_SECTIONS = [
-  { title: 'Сотрудник ОСБ', fields: [
+  { title: 'Сотрудник УСБ', fields: [
     { k: 'officer_post', label: 'Должность', type: 'text', req: 1 },
     { k: 'officer_rank', label: 'Звание', type: 'datalist', opts: RANKS, req: 1 },
     { k: 'officer_full', label: 'ФИО полностью', type: 'text', req: 1 },
     { k: 'officer_short', label: 'ФИО кратко', type: 'text', req: 1, btn: { label: 'Сформировать из полного', fn: 'short' } },
     { k: 'officer_phone', label: 'Телефон исполнителя', type: 'text' },
   ]},
-  { title: 'Начальник ОСБ (согласование)', fields: [
+  { title: 'Начальник УСБ (согласование)', fields: [
     { k: 'osb_post', label: 'Должность', type: 'text' },
     { k: 'osb_rank', label: 'Звание', type: 'datalist', opts: RANKS },
     { k: 'osb_full', label: 'ФИО полностью', type: 'text' },
@@ -262,7 +262,7 @@ const DOC_SCHEMAS = {
     { title: 'Печати и штампы', fields: [
       { k: 'show_disclaimer', label: 'Поставить печать «Для ролевого отыгрыша»', type: 'check' },
       { k: 'show_bottom_sign', label: 'Поставить свою подпись внизу', type: 'check' },
-      ...stampFields('sogl_osb', 'Согласовано ОСБ'),
+      ...stampFields('sogl_osb', 'Согласовано УСБ'),
       ...stampFields('sogl_gu', 'Согласовано ГУ'),
       { k: 'show_vruch', label: 'Поставить отметку о вручении', type: 'check' },
       { k: 'vruch_date', label: 'Дата вручения', type: 'date', showIf: 'show_vruch' },
@@ -302,7 +302,7 @@ const DOC_SCHEMAS = {
     { title: 'Печати и штампы', fields: [
       { k: 'show_copy', label: 'Поставить штамп «Копия верна»', type: 'check' },
       { k: 'show_bottom_sign', label: 'Поставить свою подпись внизу', type: 'check' },
-      ...stampFields('sogl_osb', 'Согласовано ОСБ'),
+      ...stampFields('sogl_osb', 'Согласовано УСБ'),
       ...stampFields('sogl_gu', 'Согласовано ГУ'),
       { k: 'show_vruch', label: 'Поставить отметку о вручении', type: 'check' },
       { k: 'vruch_date', label: 'Дата вручения', type: 'date', showIf: 'show_vruch' },
@@ -331,7 +331,7 @@ const DOC_SCHEMAS = {
       { k: 'show_copy', label: 'Поставить штамп «Копия верна»', type: 'check' },
       { k: 'show_bottom_sign', label: 'Поставить свою подпись внизу', type: 'check' },
       { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
-      ...stampFields('sogl_osb', 'Согласовано ОСБ'),
+      ...stampFields('sogl_osb', 'Согласовано УСБ'),
       ...stampFields('sogl_gu', 'Согласовано ГУ'),
       { k: 'show_vruch', label: 'Поставить отметку о вручении', type: 'check' },
       { k: 'vruch_date', label: 'Дата вручения', type: 'date', showIf: 'show_vruch' },
@@ -477,7 +477,7 @@ const DOC_SCHEMAS = {
   zayavlenie: [
     { title: 'Кому и от кого', fields: [
       { k: 'boss_to', label: 'Кому адресовано', type: 'textarea', req: 1,
-        sub: 'Например: Начальнику ОСБ ГУ МВД … Леонову Д.С.' },
+        sub: 'Например: Начальнику УСБ ГУ МВД … Леонову Д.С.' },
       { k: 'appl_fio', label: 'ФИО заявителя (именит. падеж)', type: 'text', req: 1,
         sub: 'Например: Петров Пётр Петрович' },
       { k: 'appl_birth', label: 'Дата рождения', type: 'text', sub: 'Например: 1 января 1990 года' },
@@ -511,6 +511,37 @@ const DOC_SCHEMAS = {
   ],
 };
 
+/* Переименование в текстовых значениях; технические ключи и формат JSON прежние. */
+function renameOrganization(value) {
+  if (typeof value === 'string') {
+    return value
+      .replace(/отдел(а|у|ом|е)? собственной безопасности(?: управления ГАИ)?/gi, (match, ending = '') => {
+        let name = 'управлени' + ({ '': 'е', 'а': 'я', 'у': 'ю', 'ом': 'ем', 'е': 'и' }[ending.toLowerCase()]);
+        name += ' собственной безопасности';
+        if (/управления ГАИ$/i.test(match)) name += ' ГУ МВД';
+        return match === match.toUpperCase() ? name.toUpperCase()
+          : match[0] === match[0].toUpperCase() ? name[0].toUpperCase() + name.slice(1) : name;
+      })
+      .replace(/(^|[^а-яёa-z0-9_])ОСБ(?=$|[^а-яёa-z0-9_])/gi, '$1УСБ');
+  }
+  if (Array.isArray(value)) return value.map(renameOrganization);
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(Object.entries(value).map(([key, item]) => [key, renameOrganization(item)]));
+  }
+  return value;
+}
+function readStoredData(key) {
+  const raw = localStorage.getItem(key);
+  if (!raw) return null;
+  const original = JSON.parse(raw);
+  const renamed = renameOrganization(original);
+  const json = JSON.stringify(renamed);
+  if (json !== JSON.stringify(original)) {
+    try { localStorage.setItem(key, json); } catch { /* Данные доступны и при переполненном хранилище. */ }
+  }
+  return renamed;
+}
+
 /* ---------- состояние ---------- */
 const state = {
   template: (() => { try { return localStorage.getItem(LS_TEMPLATE) || 'trebovanie'; } catch { return 'trebovanie'; } })(),
@@ -530,18 +561,16 @@ const state = {
 if (!state.docs[state.template]) state.template = 'trebovanie';
 function loadLS(key, fb) {
   try {
-    const raw = localStorage.getItem(key);
-    if (!raw) return fb;
-    const o = JSON.parse(raw);
+    const o = readStoredData(key);
+    if (!o) return fb;
     return { ...structuredClone(fb), ...o };
   } catch { return fb; }
 }
 /* Дела: загрузка/сохранение отдельно, чтобы не ломать старые черновики */
 function loadCases() {
   try {
-    const raw = localStorage.getItem(LS_CASES);
-    if (raw) {
-      const arr = JSON.parse(raw);
+    const arr = readStoredData(LS_CASES);
+    if (arr) {
       if (Array.isArray(arr)) state.cases = arr.filter(c => c && c.id && Array.isArray(c.docs));
     }
   } catch {}
@@ -1675,7 +1704,7 @@ function importCaseFile(file) {
   const r = new FileReader();
   r.onload = () => {
     try {
-      const o = JSON.parse(r.result);
+      const o = renameOrganization(JSON.parse(r.result));
       if (!o || !Array.isArray(o.docs)) throw new Error('не похож на дело (нет docs[])');
       const docs = [];
       for (const d of o.docs) {

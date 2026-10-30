@@ -64,12 +64,12 @@
 #let v-acq-post = "Инспектор ОБ ДПС Юрий Ингушев"
 #let v-acq-sign = "Ингушев"
 #let v-acq-short = "Ю.С. Ингушев"
-#let v-officer-post = "Заместитель начальника отдела собственной безопасности ГУ МВД"
+#let v-officer-post = "Заместитель начальника управления собственной безопасности ГУ МВД"
 #let v-officer-rank = "майор полиции"
 #let v-officer-full = "Щетков Владислав Алексеевич"
 #let v-officer-short = "В.А. Щетков"
 #let v-officer-phone = "5-6-5"
-#let v-sogl-osb-post = "Начальник ОСБ ГУ МВД"
+#let v-sogl-osb-post = "Начальник УСБ ГУ МВД"
 #let v-sogl-osb-rank = "подполковник полиции"
 #let v-sogl-osb-day = "12"
 #let v-sogl-osb-month-gen = "апреля"
@@ -132,7 +132,7 @@
   #set text(size: 10pt)
   #upper[Министерство внутренних дел Российской Федерации] \
   #set text(size: 11pt, weight: "bold")
-  ОТДЕЛ СОБСТВЕННОЙ БЕЗОПАСНОСТИ \ ГЛАВНОГО УПРАВЛЕНИЯ МВД ПО НИЖЕГОРОДСКОЙ ОБЛАСТИ
+  УПРАВЛЕНИЕ СОБСТВЕННОЙ БЕЗОПАСНОСТИ \ ГЛАВНОГО УПРАВЛЕНИЯ МВД ПО НИЖЕГОРОДСКОЙ ОБЛАСТИ
 
   #v(1em)
   #text(size: 18pt, weight: "bold", tracking: 0.4em)[ТРЕБОВАНИЕ]
