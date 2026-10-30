@@ -35,7 +35,7 @@ const DATA_KEYS = {
     'v-vruch-day','v-vruch-month-gen','v-vruch-year','v-vruch-time','v-vruch-sign','v-vruch-fio',
     'v-has-gerb','v-has-sign','v-sign-width','v-show-bottom-sign','v-show-sogl-osb','v-show-sogl-gu','v-show-vruch','v-show-disclaimer'],
   proverka: ['v-day','v-month-gen','v-month-num','v-year','v-city','v-num','v-target-title','v-supervision',
-    'v-violation','v-check-num','v-suspend-word','v-suspend-target','v-notify-fio',
+    'v-violation','v-check-num','v-suspend-word','v-suspend-target','v-notify-fio','v-notify-pronoun',
     'v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
     'v-sogl-osb-post','v-sogl-osb-rank','v-sogl-osb-day','v-sogl-osb-month-gen','v-sogl-osb-year','v-sogl-osb-sign','v-sogl-osb-fio',
     'v-sogl-gu-post','v-sogl-gu-rank','v-sogl-gu-day','v-sogl-gu-month-gen','v-sogl-gu-year','v-sogl-gu-sign','v-sogl-gu-fio',
@@ -133,7 +133,7 @@ const DEFAULT_DOCS = {
     show_disclaimer: true,
     ...structuredClone(STAMPS_DEF) },
   proverka: { date: '2026-04-02', city: 'г. Арзамас', num: '33',
-    subj_post_rod: 'сотрудника ОБ ДПС ГАИ', subj_rank: 'младший сержант полиции',
+    subj_post_rod: 'сотрудника ОБ ДПС ГАИ', subj_post_dat: '', subj_rank: 'младший сержант полиции',
     subj_sex: 'm', subj_surname: 'Иванов', subj_initials: 'А.А.',
     subj_name: 'Иван', subj_patr: 'Иванович',
     target_title: 'сотрудника ОБ ДПС ГАИ младшего сержанта полиции Иванова А.А.',
@@ -273,6 +273,8 @@ const DOC_SCHEMAS = {
   proverka: [
     { title: 'В отношении кого проверка', fields: [
       { k: 'subj_post_rod', label: 'Подразделение (род. падеж)', type: 'text', req: 1, sub: 'Например: сотрудника ОБ ДПС ГАИ' },
+      { k: 'subj_post_dat', label: 'Должность получателя (кому)', type: 'text',
+        sub: 'Для уведомлений, в дательном падеже. Например: инспектору ОБ ДПС ГАИ. Пусто — должность в уведомлении не меняется.' },
       { k: 'subj_rank', label: 'Звание', type: 'select', opts: RANK_LIST, req: 1 },
       { k: 'subj_sex', label: 'Пол', type: 'segmented',
         opts: [{ v: 'm', label: 'Муж.' }, { v: 'f', label: 'Жен.' }] },
@@ -547,13 +549,13 @@ const state = {
   template: (() => { try { return localStorage.getItem(LS_TEMPLATE) || 'trebovanie'; } catch { return 'trebovanie'; } })(),
   profile: loadLS(LS_PROFILE, structuredClone(DEFAULT_PROFILE)),
   docs: {
-    trebovanie: loadLS(LS_DRAFT('trebovanie'), structuredClone(DEFAULT_DOCS.trebovanie)),
-    proverka: loadLS(LS_DRAFT('proverka'), structuredClone(DEFAULT_DOCS.proverka)),
-    otstranenie: loadLS(LS_DRAFT('otstranenie'), structuredClone(DEFAULT_DOCS.otstranenie)),
-    unsp: loadLS(LS_DRAFT('unsp'), structuredClone(DEFAULT_DOCS.unsp)),
-    uksp: loadLS(LS_DRAFT('uksp'), structuredClone(DEFAULT_DOCS.uksp)),
-    protokol_oprosa: loadLS(LS_DRAFT('protokol_oprosa'), structuredClone(DEFAULT_DOCS.protokol_oprosa)),
-    zayavlenie: loadLS(LS_DRAFT('zayavlenie'), structuredClone(DEFAULT_DOCS.zayavlenie)),
+    trebovanie: loadLS(LS_DRAFT('trebovanie'), emptyDocument('trebovanie')),
+    proverka: loadLS(LS_DRAFT('proverka'), emptyDocument('proverka')),
+    otstranenie: loadLS(LS_DRAFT('otstranenie'), emptyDocument('otstranenie')),
+    unsp: loadLS(LS_DRAFT('unsp'), emptyDocument('unsp')),
+    uksp: loadLS(LS_DRAFT('uksp'), emptyDocument('uksp')),
+    protokol_oprosa: loadLS(LS_DRAFT('protokol_oprosa'), emptyDocument('protokol_oprosa')),
+    zayavlenie: loadLS(LS_DRAFT('zayavlenie'), emptyDocument('zayavlenie')),
   },
   cases: [],
   active: { mode: 'free', caseId: null, docId: null },
@@ -617,14 +619,35 @@ function workData() {
   }
   return state.docs[state.template];
 }
-function saveLS() {
-  try {
-    localStorage.setItem(LS_PROFILE, JSON.stringify(state.profile));
-    localStorage.setItem(LS_TEMPLATE, state.template);
-    localStorage.setItem(LS_DRAFT(state.template), JSON.stringify(state.docs[state.template]));
-    localStorage.setItem(LS_CASES, JSON.stringify(state.cases));
-    localStorage.setItem(LS_ACTIVE, JSON.stringify(state.active));
-  } catch (e) { setStatus('localStorage переполнен: уменьшите картинку подписи', true); }
+const persistedValues = new Map();
+const failedSaveKeys = new Set();
+function saveLS(scope = 'all') {
+  const entries = [];
+  if (scope === 'all' || scope === 'profile') entries.push([LS_PROFILE, JSON.stringify(state.profile)]);
+  if (scope === 'all' || scope === 'document' || scope === 'cases') {
+    if (scope === 'all' || scope === 'cases' || state.active.mode === 'case') entries.push([LS_CASES, JSON.stringify(state.cases)]);
+    if (scope === 'all') {
+      for (const [tpl, data] of Object.entries(state.docs)) entries.push([LS_DRAFT(tpl), JSON.stringify(data)]);
+    } else if (scope === 'document' && state.active.mode === 'free') entries.push([LS_DRAFT(state.template), JSON.stringify(workData())]);
+  }
+  if (scope === 'all') entries.push([LS_TEMPLATE, state.template], [LS_ACTIVE, JSON.stringify(state.active)]);
+  for (const [key, value] of entries) {
+    try {
+      if (!persistedValues.has(key)) persistedValues.set(key, localStorage.getItem(key));
+      if (persistedValues.get(key) !== value) {
+        localStorage.setItem(key, value);
+        persistedValues.set(key, value);
+      }
+      failedSaveKeys.delete(key);
+    } catch { failedSaveKeys.add(key); }
+  }
+  const el = $('#saveStatus');
+  if (el) {
+    el.textContent = failedSaveKeys.size ? 'Не сохранено — проверьте доступ к хранилищу и свободное место' : 'Сохранено в браузере';
+    el.classList.toggle('err', failedSaveKeys.size > 0);
+    el.classList.toggle('ok', failedSaveKeys.size === 0);
+  }
+  return entries.every(([key]) => !failedSaveKeys.has(key));
 }
 function touchCase() {
   const c = getActiveCase();
@@ -733,6 +756,17 @@ function fieldNode(sec, f, values, onChange, scope) {
   }
 
   if (f.type === 'action') {
+    if (f.fn === 'fill_from_proverka' && state.active.mode === 'case') {
+      const sources = (getActiveCase()?.docs || []).filter(d => d.tpl === 'proverka');
+      if (sources.length > 1) {
+        const select = document.createElement('select');
+        select.dataset.sourceProverka = '';
+        select.setAttribute('aria-label', 'Постановление для автозаполнения');
+        select.append(new Option('Выберите постановление', ''));
+        for (const doc of sources) select.append(new Option(`${doc.name} · № ${doc.data.num || '—'}`, doc.docId));
+        wrap.append(select);
+      }
+    }
     const b = document.createElement('button');
     b.type = 'button';
     b.className = 'mini';
@@ -999,11 +1033,13 @@ function processSignature(file, cleanWhite, maxSide) {
 
 /* Автозаполнение уведомления из постановления.
    Вне дел — из глобальной вкладки «Проверка», в деле — строго из Проверки того же дела. */
-function fillUnspFromProverka(p, d) {
+function fillUnspFromProverka(p, d, sourceId) {
   let P = state.docs.proverka || {};
   if (state.active.mode === 'case') {
     const c = getActiveCase();
-    const prov = c ? c.docs.find(x => x.tpl === 'proverka') : null;
+    const sources = c ? c.docs.filter(x => x.tpl === 'proverka') : [];
+    if (sources.length > 1 && !sourceId) return { patch: {}, msg: 'Выберите постановление для автозаполнения' };
+    const prov = sourceId ? sources.find(x => x.docId === sourceId) : sources[0];
     if (!prov) return { patch: {}, msg: 'В этом деле нет Постановления на СП — добавьте его первым документом' };
     P = prov.data || {};
   }
@@ -1012,29 +1048,30 @@ function fillUnspFromProverka(p, d) {
   const hasName = cleanWs(P.subj_name) && cleanWs(P.subj_patr);
   const patch = {};
   if (P.date) { patch.check_start = P.date; patch.postan_date = P.date; }
-  if (P.subj_post_rod) patch.addr_post = P.subj_post_rod;
+  if (cleanWs(P.subj_post_dat)) patch.addr_post = cleanWs(P.subj_post_dat);
   if (rankDat) patch.addr_rank = rankDat;
   if (hasName) {
     patch.addr_fio = cleanWs(`${sn.dat} ${declFirstDat(P.subj_name, P.subj_sex)} ${declPatrDat(P.subj_patr, P.subj_sex)}`);
     patch.greet_fio = cleanWs(`${P.subj_surname} ${P.subj_name} ${P.subj_patr}`);
-  } else if (!cleanWs(d.addr_fio) && sn.dat) {
-    patch.addr_fio = sn.dat;
+  } else {
+    patch.addr_fio = cleanWs(`${sn.dat} ${P.subj_initials || ''}`);
+    patch.greet_fio = cleanWs(`${P.subj_surname || ''} ${P.subj_initials || ''}`);
   }
   patch.appeal = P.subj_sex === 'f' ? 'Уважаемая' : 'Уважаемый';
-  return { patch, msg: 'Уведомление заполнено из постановления' };
+  return { patch, msg: 'Уведомление заполнено из постановления' + (P.subj_post_dat ? '' : '. Должность получателя не изменена — заполните вручную') };
 }
 const DOC_ACTIONS = {
   recompose: {
     run: (p, d) => ({ patch: composeProverka(p, d), msg: 'Формулировки собраны' }),
   },
   fill_from_proverka: {
-    run: (p, d) => fillUnspFromProverka(p, d),
+    run: (p, d, sourceId) => fillUnspFromProverka(p, d, sourceId),
   },
 };
 function renderProfile() {
   const root = $('#profileForm');
   root.innerHTML = '';
-  const onChange = () => { saveLS(); scheduleCompile(); };
+  const onChange = () => { saveLS('profile'); scheduleCompile(); };
   for (const sec of PROFILE_SECTIONS) {
     const h = document.createElement('h3');
     h.textContent = sec.title;
@@ -1098,7 +1135,7 @@ function renderDoc() {
     head.append(row);
   }
   root.append(head);
-  const onChange = () => { touchCase(); saveLS(); refreshSubforms(root, values); scheduleCompile(); };
+  const onChange = () => { touchCase(); saveLS('document'); refreshSubforms(root, values); scheduleCompile(); };
   for (const sec of DOC_SCHEMAS[tpl]) {
     const card = document.createElement('div');
     card.className = 'card';
@@ -1113,7 +1150,13 @@ function renderDoc() {
     b.onclick = () => {
       const act = DOC_ACTIONS[b.dataset.action];
       if (!act) return;
-      const { patch, msg } = act.run(state.profile, values);
+      const sourceId = b.closest('.field').querySelector('[data-source-proverka]')?.value;
+      const { patch, msg } = act.run(state.profile, values, sourceId);
+      if (!Object.keys(patch).length) {
+        setStatus(msg, true);
+        b.closest('.field').querySelector('[data-source-proverka]')?.focus();
+        return;
+      }
       Object.assign(values, patch);
       for (const [k, v] of Object.entries(patch)) {
         const inp = root.querySelector(`[data-fk="${k}"]`);
@@ -1131,7 +1174,8 @@ function renderDoc() {
         } else inp.value = v;
         inp.classList.remove('invalid');
       }
-      saveLS();
+      touchCase();
+      saveLS('document');
       scheduleCompile();
       setStatus(msg, false, true);
     };
@@ -1186,6 +1230,7 @@ function buildData() {
     D['v-violation'] = uv ? uv + (/[.!?…:;]$/.test(uv) ? ' ' : '. ') + VIOLATION_TAIL : VIOLATION_TAIL;
     D['v-check-num'] = d.num;
     D['v-suspend-word'] = d.suspend; D['v-suspend-target'] = d.suspend_target; D['v-notify-fio'] = d.notify_fio;
+    D['v-notify-pronoun'] = d.subj_sex === 'f' ? 'нее' : 'него';
     const hasNP = cleanWs(d.subj_name) && cleanWs(d.subj_patr);
     D['v-vruch-sign'] = d.subj_surname || '';
     D['v-vruch-fio'] = hasNP
@@ -1309,19 +1354,42 @@ function dataLines(D) {
   return Object.entries(D).map(([k, v]) => {
     if (typeof v === 'boolean') return `#let ${k} = ${v}`;
     if (typeof v === 'number') return `#let ${k} = ${Number.isFinite(v) ? v : 0}`;
-    if (typeof v === 'string' && /^[0-9.]+mm$/.test(v)) return `#let ${k} = ${v}`;
+    if (k === 'v-sign-width' && typeof v === 'string' && /^[0-9.]+mm$/.test(v)) return `#let ${k} = ${v}`;
     return `#let ${k} = ${escTyp(v)}`;
   }).join('\n');
 }
 function injectData(tpl, lines) {
-  return tpl.replace(/\/\/ <OSB-DATA>\n[\s\S]*?\n\/\/ <\/OSB-DATA>/, `// <OSB-DATA>\n${lines}\n// </OSB-DATA>`);
+  return tpl.replace(/\/\/ <OSB-DATA>\n[\s\S]*?\n\/\/ <\/OSB-DATA>/, () => `// <OSB-DATA>\n${lines}\n// </OSB-DATA>`);
 }
 
 /* ---------- Typst + preview ---------- */
-let typstOk = false, tplCache = {}, pdfBytes = null, currentSource = '', lastSignHash = '';
+let typstOk = false, tplCache = {}, pdfBytes = null, currentSource = '', lastSignSource = null;
 let sealReady = false;
-let compileSeq = 0, compiling = false, queued = false;
-const scheduleCompile = debounce(() => recompile(), 700);
+let compileSeq = 0, compiling = false, queued = false, compilePromise = null;
+let compiledSnapshot = null;
+function documentVersion() {
+  return JSON.stringify([state.active, workTpl(), workData(), state.profile]);
+}
+function invalidateExport() {
+  compiledSnapshot = null;
+  pdfBytes = null;
+  currentSource = '';
+  setButtons(false);
+}
+const delayedCompile = debounce(() => recompile(), 700);
+function scheduleCompile() {
+  invalidateExport();
+  delayedCompile();
+}
+async function exportSnapshot() {
+  const version = documentVersion();
+  if (!compiledSnapshot || compiledSnapshot.version !== version) await recompile();
+  if (!compiledSnapshot || compiledSnapshot.version !== documentVersion() || version !== documentVersion()) {
+    setStatus('Документ изменился — дождитесь обновления превью и повторите экспорт', true);
+    return null;
+  }
+  return { ...compiledSnapshot, name: docFileBase() };
+}
 
 async function waitTypst(ms = 30000) {
   const t0 = Date.now();
@@ -1379,69 +1447,86 @@ async function getTemplate(t) {
   tplCache[t] = src;
   return src;
 }
-async function recompile() {
-  if (!typstOk) return;
-  if (state.active.mode === 'case' && !getActiveDocRef()) {
-    pdfBytes = null; currentSource = '';
-    setButtons(false);
-    $('#pages').innerHTML = '<div class="placeholder">В деле пока нет документов — нажмите «+ Документ».</div>';
-    setStatus('Дело пустое — добавьте документ', false, false);
-    return;
-  }
-  if (compiling) { queued = true; return; }
+function recompile() {
+  invalidateExport();
+  if (!typstOk) return Promise.resolve();
+  if (compiling) { queued = true; return compilePromise; }
   compiling = true;
-  try {
-    do {
-      queued = false;
-      setStatus('Компиляция…');
-      showError('');
-      try {
-        const sb = signBytes();
-        const hash = sb ? sb.length + ':' + sb[0] + ':' + sb[sb.length - 1] : 'none';
-        if (hash !== lastSignHash) {
-          if (sb) await window.$typst.mapShadow('/sign.png', sb);
-          else { try { await window.$typst.unmapShadow('/sign.png'); } catch {} }
-          lastSignHash = hash;
+  compilePromise = (async () => {
+    // Даёт вызывающему коду получить promise до первой компиляции.
+    await Promise.resolve();
+    try {
+      do {
+        queued = false;
+        if (state.active.mode === 'case' && !getActiveDocRef()) {
+          $('#pages').innerHTML = '<div class="placeholder">В деле пока нет документов — нажмите «+ Документ».</div>';
+          setStatus('Дело пустое — добавьте документ');
+          break;
         }
-        const tpl = await getTemplate(workTpl());
-        currentSource = injectData(tpl, dataLines(buildData()));
-        const t0 = performance.now();
-        pdfBytes = await window.$typst.pdf({ mainContent: currentSource });
-        await renderPreview();
-        compileSeq++;
-        window.__compileSeq = compileSeq;
-        setStatus(`Готов · ${Math.round(performance.now() - t0)} мс`, false, true);
-        setButtons(true);
-      } catch (e) {
-        console.error(e);
-        showError(String(e && e.message || e).slice(0, 2000));
-        setStatus('Ошибка компиляции', true);
-        setButtons(false);
-      }
-    } while (queued);
-  } finally {
-    compiling = false;
-  }
+        const version = documentVersion();
+        const tplName = workTpl();
+        const data = buildData();
+        const signSource = state.profile.signature === 'default'
+          ? window.OSB_SIGN_DEFAULT_B64 || '' : state.profile.signature || '';
+        setStatus('Компиляция…');
+        showError('');
+        try {
+          if (signSource !== lastSignSource) {
+            if (signSource) await window.$typst.mapShadow('/sign.png', b64ToBytes(signSource));
+            else await window.$typst.unmapShadow('/sign.png');
+            lastSignSource = signSource;
+          }
+          const tpl = await getTemplate(tplName);
+          const source = injectData(tpl, dataLines(data));
+          const t0 = performance.now();
+          const bytes = await window.$typst.pdf({ mainContent: source });
+          if (version !== documentVersion()) { queued = true; continue; }
+          const preview = await renderPreview(bytes);
+          if (version !== documentVersion()) { queued = true; continue; }
+          $('#pages').replaceChildren(preview);
+          pdfBytes = bytes;
+          currentSource = source;
+          compiledSnapshot = { version, bytes, source };
+          compileSeq++;
+          window.__compileSeq = compileSeq;
+          setStatus(`Готов · ${Math.round(performance.now() - t0)} мс`, false, true);
+          setButtons(true);
+        } catch (e) {
+          if (version !== documentVersion()) { queued = true; continue; }
+          console.error(e);
+          invalidateExport();
+          showError(String(e && e.message || e).slice(0, 2000));
+          setStatus('Ошибка компиляции', true);
+        }
+      } while (queued);
+    } finally {
+      compiling = false;
+      compilePromise = null;
+    }
+  })();
+  return compilePromise;
 }
 function setButtons(on) {
   $('#btnPdf').disabled = !on;
   $('#btnJpg').disabled = !on;
   $('#btnTyp').disabled = !on;
 }
-async function renderPreview() {
+async function renderPreview(bytes) {
   if (!window.pdfjsLib) throw new Error('CDN pdf.js недоступен (нужен интернет)');
   pdfjsLib.GlobalWorkerOptions.workerSrc = window.__pdfWorkerSrc;
-  const pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
-  const box = $('#pages');
-  box.innerHTML = '';
-  for (let i = 1; i <= pdf.numPages; i++) {
-    const page = await pdf.getPage(i);
-    const vp = page.getViewport({ scale: 1.6 });
-    const cv = document.createElement('canvas');
-    cv.width = vp.width; cv.height = vp.height;
-    await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
-    box.append(cv);
-  }
+  const pdf = await pdfjsLib.getDocument({ data: bytes.slice() }).promise;
+  const box = document.createDocumentFragment();
+  try {
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const vp = page.getViewport({ scale: 1.6 });
+      const cv = document.createElement('canvas');
+      cv.width = vp.width; cv.height = vp.height;
+      await page.render({ canvasContext: cv.getContext('2d'), viewport: vp }).promise;
+      box.append(cv);
+    }
+    return box;
+  } finally { await pdf.destroy(); }
 }
 function slugify(s) {
   return String(s || '').toLowerCase().replace(/[^\p{L}\p{N}]+/gu, '_').replace(/^_+|_+$/g, '').slice(0, 40) || 'delo';
@@ -1459,12 +1544,13 @@ function docFileBase() {
   }
   return `${t}_${tag}`;
 }
-async function exportJpg() {
-  if (!pdfBytes) return;
+async function exportJpg(snapshot) {
+  if (!snapshot) return;
   setStatus('Рендер JPG…');
+  let pdf;
   try {
-    const pdf = await pdfjsLib.getDocument({ data: pdfBytes.slice() }).promise;
-    const base = docFileBase();
+    pdf = await pdfjsLib.getDocument({ data: snapshot.bytes.slice() }).promise;
+    const base = snapshot.name;
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
       const vp = page.getViewport({ scale: 3 });
@@ -1480,6 +1566,7 @@ async function exportJpg() {
     }
     setStatus('JPG сохранён', false, true);
   } catch (e) { setStatus('Ошибка экспорта JPG: ' + e.message, true); }
+  finally { if (pdf) await pdf.destroy(); }
 }
 function missingRequired() {
   const bad = [];
@@ -1506,18 +1593,20 @@ function bindUI() {
       recompile();
     };
   });
-  $('#btnPdf').onclick = () => {
+  $('#btnPdf').onclick = async () => {
     const bad = missingRequired();
     if (bad.length) { setStatus('Заполните обязательные поля: ' + bad.slice(0, 3).join(', '), true); return; }
-    if (pdfBytes) download(new Blob([pdfBytes], { type: 'application/pdf' }), docFileBase() + '.pdf');
+    const snapshot = await exportSnapshot();
+    if (snapshot) download(new Blob([snapshot.bytes], { type: 'application/pdf' }), snapshot.name + '.pdf');
   };
-  $('#btnJpg').onclick = () => {
+  $('#btnJpg').onclick = async () => {
     const bad = missingRequired();
     if (bad.length) { setStatus('Заполните обязательные поля: ' + bad.slice(0, 3).join(', '), true); return; }
-    exportJpg();
+    await exportJpg(await exportSnapshot());
   };
-  $('#btnTyp').onclick = () => {
-    if (currentSource) download(new Blob([currentSource], { type: 'text/plain' }), docFileBase() + '.typ');
+  $('#btnTyp').onclick = async () => {
+    const snapshot = await exportSnapshot();
+    if (snapshot) download(new Blob([snapshot.source], { type: 'text/plain' }), snapshot.name + '.typ');
   };
   $('#btnFill').onclick = () => {
     if (state.active.mode === 'case' && !getActiveDocRef()) return;
@@ -1536,17 +1625,10 @@ function bindUI() {
     if (state.active.mode === 'case' && !getActiveDocRef()) return;
     if (!confirm('Очистить все поля текущего документа? Профиль и город сохранятся.')) return;
     const d = workData();
-    const keepCity = d.city;
-    for (const k of Object.keys(d)) {
-      if (k === 'city') continue;
-      if (typeof d[k] === 'boolean') {
-        d[k] = k.startsWith('show_') ? false : d[k];
-        if (k === 'show_bottom_sign') d[k] = true;
-      } else if (k === 'suspend') d[k] = 'отстранить';
-      else if (k === 'subj_sex') d[k] = 'm';
-      else d[k] = '';
-    }
-    d.city = keepCity;
+    const clean = emptyDocument(workTpl(), false);
+    if (Object.hasOwn(d, 'city')) clean.city = d.city;
+    for (const k of Object.keys(d)) delete d[k];
+    Object.assign(d, clean);
     touchCase();
     saveLS(); renderDoc(); recompile();
   };
@@ -1570,14 +1652,30 @@ function openCase(caseId, docId) {
   hideCasesMenu();
 }
 function autoDocName(c, tpl) {
-  const n = c.docs.filter(d => d.tpl === tpl).length + 1;
   const base = TPL_NAMES[tpl] || tpl;
-  return n <= 1 && !c.docs.some(d => d.tpl === tpl) ? base : `${base} ${n}`;
+  const names = new Set(c.docs.map(d => d.name));
+  let n = c.docs.filter(d => d.tpl === tpl).length ? 2 : 1;
+  while (names.has(n === 1 ? base : `${base} ${n}`)) n++;
+  return n === 1 ? base : `${base} ${n}`;
+}
+function emptyDocument(tpl, withDate = true) {
+  const data = structuredClone(DEFAULT_DOCS[tpl]);
+  const selections = new Set(DOC_SCHEMAS[tpl].flatMap(s => s.fields || [])
+    .filter(f => f.type === 'select' || f.type === 'segmented').map(f => f.k));
+  for (const key of Object.keys(data)) {
+    if (key === 'city' || selections.has(key)) continue;
+    if (typeof data[key] === 'boolean') data[key] = ['show_bottom_sign', 'show_sign', 'show_accept'].includes(key);
+    else if (typeof data[key] === 'number') data[key] = key === 'qa_count' ? 1 : 0;
+    else data[key] = '';
+  }
+  const today = new Date();
+  data.date = withDate ? `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}` : '';
+  return data;
 }
 function addDocToCase(tpl) {
   const c = getActiveCase();
   if (!c) return;
-  const doc = { docId: uid('d'), tpl, name: autoDocName(c, tpl), data: structuredClone(DEFAULT_DOCS[tpl]) };
+  const doc = { docId: uid('d'), tpl, name: autoDocName(c, tpl), data: emptyDocument(tpl) };
   c.docs.push(doc);
   state.active.docId = doc.docId;
   touchCase(); saveLS(); syncContextUI(); renderDoc(); recompile();
@@ -1700,32 +1798,68 @@ function exportCase(caseId) {
   const payload = { v: 1, app: 'osb-docs', title: c.title, descr: c.descr || '', docs: c.docs };
   download(new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' }), `${slugify(c.title)}.json`);
 }
+function parseCaseBackup(input, fileName) {
+  const object = value => value && typeof value === 'object' && !Array.isArray(value);
+  if (!object(input) || !Array.isArray(input.docs)) throw new Error('не похож на дело (нет docs[])');
+  if (input.v !== undefined && input.v !== 1) throw new Error('неподдерживаемая версия JSON');
+  if (input.app !== undefined && input.app !== 'osb-docs') throw new Error('JSON создан другим приложением');
+  for (const key of ['title', 'descr']) {
+    if (input[key] !== undefined && typeof input[key] !== 'string') throw new Error(`поле ${key} должно быть текстом`);
+  }
+  const o = renameOrganization(input);
+  const docs = [];
+  let skipped = 0;
+  for (const [index, d] of o.docs.entries()) {
+    if (!object(d) || typeof d.tpl !== 'string') throw new Error(`документ ${index + 1}: неверная структура`);
+    if (!Object.hasOwn(TPL_NAMES, d.tpl)) { skipped++; continue; }
+    if (!object(d.data)) throw new Error(`документ ${index + 1}: нет объекта data`);
+    if (d.name !== undefined && typeof d.name !== 'string') throw new Error(`документ ${index + 1}: название должно быть текстом`);
+    const data = emptyDocument(d.tpl, false);
+    const fields = DOC_SCHEMAS[d.tpl].flatMap(s => s.fields || []);
+    for (const [key, value] of Object.entries(d.data)) {
+      if (!Object.hasOwn(data, key)) continue;
+      const field = fields.find(f => f.k === key);
+      // Совместимость с прежним очищением числовых полей.
+      if (field?.type === 'number' && value === '') continue;
+      if (typeof value !== typeof data[key] || (typeof value === 'number' && !Number.isFinite(value))) {
+        throw new Error(`документ ${index + 1}: неверный тип поля ${key}`);
+      }
+      if (value && field?.type === 'date' && (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number.isNaN(Date.parse(value)) || new Date(value).toISOString().slice(0, 10) !== value)) {
+        throw new Error(`документ ${index + 1}: неверная дата ${key}`);
+      }
+      if (value && field?.type === 'time' && !/^([01]\d|2[0-3]):[0-5]\d$/.test(value)) {
+        throw new Error(`документ ${index + 1}: неверное время ${key}`);
+      }
+      if (field?.type === 'number' && (!Number.isInteger(value) || value < field.min || value > field.max)) {
+        throw new Error(`документ ${index + 1}: поле ${key} вне допустимого диапазона`);
+      }
+      data[key] = value;
+    }
+    docs.push({ docId: uid('d'), tpl: d.tpl, name: (d.name || TPL_NAMES[d.tpl]).slice(0, 120), data });
+  }
+  if (o.docs.length && !docs.length) throw new Error('в файле нет известных шаблонов');
+  return {
+    caseData: { id: uid('c'), title: (o.title || fileName.replace(/\.json$/i, '')).slice(0, 120) || 'Дело (импорт)',
+      descr: (o.descr || '').slice(0, 500), createdAt: Date.now(), updatedAt: Date.now(), docs },
+    skipped,
+  };
+}
 function importCaseFile(file) {
   const r = new FileReader();
   r.onload = () => {
     try {
-      const o = renameOrganization(JSON.parse(r.result));
-      if (!o || !Array.isArray(o.docs)) throw new Error('не похож на дело (нет docs[])');
-      const docs = [];
-      for (const d of o.docs) {
-        if (!d || !TPL_NAMES[d.tpl]) continue;
-        docs.push({
-          docId: uid('d'),
-          tpl: d.tpl,
-          name: String(d.name || TPL_NAMES[d.tpl]).slice(0, 120),
-          data: { ...structuredClone(DEFAULT_DOCS[d.tpl]), ...(d.data || {}) },
-        });
-      }
-      if (!docs.length) throw new Error('в файле нет известных шаблонов');
-      const c = {
-        id: uid('c'), title: String(o.title || file.name.replace(/\.json$/i, '')).slice(0, 120) || 'Дело (импорт)',
-        descr: String(o.descr || '').slice(0, 500), createdAt: Date.now(), updatedAt: Date.now(), docs,
-      };
+      const { caseData: c, skipped } = parseCaseBackup(JSON.parse(r.result), file.name);
       state.cases.push(c);
-      saveLS(); syncContextUI();
-      setStatus(`Импортировано дело «${c.title}» (${docs.length} док.)`, false, true);
+      if (!saveLS('cases')) {
+        state.cases.pop();
+        throw new Error('дело не сохранено: хранилище недоступно или переполнено');
+      }
+      syncContextUI();
+      setStatus(`Импортировано дело «${c.title}» (${c.docs.length} док.)` +
+        (skipped ? `. Пропущено неизвестных шаблонов: ${skipped}` : ''), false, true);
     } catch (e) { setStatus('Импорт не удался: ' + e.message, true); }
   };
+  r.onerror = () => setStatus('Импорт не удался: файл не прочитан', true);
   r.readAsText(file);
 }
 /* Модалка создания/переименования */

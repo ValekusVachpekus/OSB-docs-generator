@@ -262,6 +262,29 @@ body {
   background: #ef4444;
 }
 
+.preview-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 16px;
+  margin-bottom: 12px;
+  padding: 7px 10px;
+  background: var(--topbar-bg);
+  border-radius: 6px;
+}
+
+.preview-status .status {
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.preview-status .status::before {
+  flex-shrink: 0;
+}
+
 /* ==========================================================================
    2. ВЫПАДАЮЩЕЕ МЕНЮ ДЕЛ (.cases-menu)
    ========================================================================== */
