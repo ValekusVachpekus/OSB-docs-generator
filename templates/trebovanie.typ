@@ -48,6 +48,9 @@
 
 #set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
 
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
 // <OSB-DATA>
 #let v-day = "13"
 #let v-month-gen = "апреля"
@@ -146,7 +149,7 @@
   align: (left, center, right),
   [« #v-day » #v-month-gen #v-year г.],
   [],
-  [#v-city]
+  [#osb-format("v-city", v-city)]
 )
 
 #v(1.5em)
@@ -158,7 +161,7 @@
   align(left + top)[
     #set par(first-line-indent: 0pt, justify: false)
     #set text(size: 11pt)
-    Об устранении признаков административного правонарушения, предусмотренного #v-title-tail
+    Об устранении признаков административного правонарушения, предусмотренного #osb-format("v-title-tail", v-title-tail)
   ],
   rotate(-1.5deg)[
     #move(dx: 5pt, dy: -10pt)[
@@ -200,7 +203,7 @@
 #v(1.5em)
 
 // --- Преамбула ---
-В целях обеспечения соблюдения законности сотрудниками органов внутренних дел, а также пресечения нарушения #v-preamble-article со стороны #v-violator —
+В целях обеспечения соблюдения законности сотрудниками органов внутренних дел, а также пресечения нарушения #osb-format("v-preamble-article", v-preamble-article) со стороны #osb-format("v-violator", v-violator) —
 
 #v(1em)
 #align(center)[#text(weight: "bold")[Т Р Е Б У Ю:]]
@@ -208,9 +211,9 @@
 
 // --- Пункты требования ---
 #set enum(indent: 1.25cm)
-+ В срок до #v-deadline-text устранить признаки административного правонарушения, предусмотренного #v-demand-article.
-+ Демонтировать с лобового и передних боковых стекол автомобиля #v-auto покрытие, светопропускание которого не соответствует требованиям действующего законодательства.
-+ Разъяснить, что невыполнение настоящего требования в установленный срок влечет ответственность по #v-liability.
++ В срок до #v-deadline-text устранить признаки административного правонарушения, предусмотренного #osb-format("v-demand-article", v-demand-article).
++ Демонтировать с лобового и передних боковых стекол автомобиля #osb-format("v-auto", v-auto) покрытие, светопропускание которого не соответствует требованиям действующего законодательства.
++ Разъяснить, что невыполнение настоящего требования в установленный срок влечет ответственность по #osb-format("v-liability", v-liability).
 
 #v(2em)
 
@@ -244,13 +247,13 @@
 
 #grid(
   columns: (1.5fr, 1fr),
-  [#v-acq-post \ С требованием ознакомлен],
+  [#osb-format("v-acq-post", v-acq-post) \ С требованием ознакомлен],
   align(bottom + right)[
     #stack(
       dir: ltr,
       spacing: 5pt,
-      [#v-acq-sign /],
-      [#v-acq-short]
+      [#osb-format("v-acq-sign", v-acq-sign) /],
+      [#osb-format("v-acq-short", v-acq-short)]
     )
   ]
 )
@@ -318,8 +321,8 @@
           #v(2pt)
           Дата: « #v-vruch-day » #v-vruch-month-gen #v-vruch-year г. \
           Время: #v-vruch-time \
-          Подпись получившего: #v-vruch-sign \
-          ФИО: #v-vruch-fio
+          Подпись получившего: #osb-format("v-vruch-sign", v-vruch-sign) \
+          ФИО: #osb-format("v-vruch-fio", v-vruch-fio)
         ]
       )
     ]

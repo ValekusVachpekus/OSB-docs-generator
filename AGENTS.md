@@ -20,12 +20,13 @@
   В деле: название + краткое описание, документы — отдельные экземпляры шаблонов
   (не пересекаются между делами), повторы разрешены (несколько опросов).
   Имя документа — автонумерация (`Протокол опроса 2`) + переименование.
-  Режим «Вне дел (просто документы)» сохраняет старые 6 черновиков.
+  Режим «Вне дел (просто документы)» сохраняет отдельный черновик каждого шаблона.
   «Заполнить из постановления» — строго внутри дела (вне дел — из глобальной Проверки).
   Бэкап дела — выгрузка/загрузка JSON.
 - Отображаемые имена шаблонов: `Требование (beta)`, `Постановление на СП` (=proverka),
   `Приказ` (=otstranenie), `Уведомление о начале СП` (=unsp),
-  `Уведомление об окончании СП` (=uksp), `Протокол опроса`, `Заявление в УСБ` (=zayavlenie).
+  `Уведомление об окончании СП` (=uksp), `Свободное уведомление` (=notification),
+  `Протокол опроса`, `Заявление в УСБ` (=zayavlenie).
   Ключи `tpl` в коде прежние.
 - Штампы: каждый включается галкой. "Копия верна" (должность+звание+ФИО сотрудника
   из профиля): в требовании — всегда видима, в проверке и приказе — галка,
@@ -63,6 +64,7 @@ officer.phone      # 5-6-5 (исполнитель)
 bossOsb.post/rank/fioFull/fioShort/signText  # Леонов Данила Сергеевич
 bossGu.post/rank/fioFull/fioShort/signText    # Егоров Дионис Иванович
 signature.dataUrl  # своя подпись PNG (base64, даунскейл ~800px), signatureWidthMm
+hide_formatting    # скрыть кнопки оформления во всех документах (символьная разметка работает)
 ```
 
 ### Trebovanie (документ)
@@ -115,6 +117,23 @@ sign_post/sign_rank (из профиля, как в УНСП), подпись �
 (звание+подпись+ФИО справа, без разбивки инициалов); печать фиксированная поверх
 (разрешено налезание), отметка о получении — галкой.
 Автозаполнение — та же кнопка fill_from_proverka (общие ключи).
+```
+
+### Свободное уведомление (`notification`)
+```
+Шапка неизменная, как у УНСП/УКСП: герб, организация, контакты и «Запрос в порядке…»; date/doc_num/reply_num/reply_date; addr_post/addr_rank/addr_fio (необяз.).
+heading + body — произвольный заголовок и весь текст, без обязательных формулировок.
+Кнопки форматирования: **жирный**, *курсив*, __подчёркнутый__; в body списки - / 1.
+Каждая непустая строка — абзац; соседние пункты объединяются в список.
+Форматирование во всех шаблонах: TEXT_FIELDS связывает контролы с v-ключами;
+inlineTypst/formattedTypst генерируют только известные функции и текст, без eval.
+dataLines сохраняет строки и добавляет словарь оформления; osb-format в шаблонах
+подставляет его с обычным текстом как fallback для локальной компиляции.
+sign_post/sign_rank/sign_fio — пусто: профиль; галки show_sign/show_copy/show_seal.
+show_poluch + poluch_date/time/fio/sign — вручную (ФИО именительный).
+Подпись и нижние штампы следуют за текстом в непереносимом блоке.
+Черновик osb_draft_notification_v1; документы дела и JSON — общий механизм.
+Во всех уведомлениях ссылка на входящий — в левой части шапки под исходящим номером.
 ```
 
 ### Приказ — универсальный (вкладка «Приказ», внутренний ключ `otstranenie`)
@@ -175,7 +194,7 @@ style.css       # формы, превью, segmented/toggle/checkbox; кноп�
 app.js          # состояние (профиль + черновики + дела), localStorage, генерация .typ, typst.ts init/preview/export
 templates.js    # СГЕНЕРИРОВАН (tools/build-templates.py) — шаблоны, вшитые для file://
 templates/
-  trebovanie.typ, proverka.typ, otstranenie.typ, unsp.typ, uksp.typ, protokol_oprosa.typ, zayavlenie.typ
+  trebovanie.typ, proverka.typ, otstranenie.typ, unsp.typ, uksp.typ, notification.typ, protokol_oprosa.typ, zayavlenie.typ
   # ПАРАМЕТРИЧЕСКИЕ (#let v-* в // <OSB-DATA>) — источник вёрстки
 assets/gerb.svg, assets/fonts/LiberationSerif-*.ttf
 assets/*.js     # СГЕНЕРИРОВАНЫ (tools/make-assets.py) — base64 для file://
@@ -193,7 +212,7 @@ assets/*.js     # СГЕНЕРИРОВАНЫ (tools/make-assets.py) — base64 �
 
 ## localStorage
 - `osb_profile_v1` — профиль + подпись ( debounce 300мс ).
-- `osb_draft_trebovanie_v1`, `osb_draft_proverka_v1`, `osb_draft_otstranenie_v1`, `osb_draft_unsp_v1`, `osb_draft_uksp_v1`, `osb_draft_protokol_oprosa_v1`, `osb_draft_zayavlenie_v1` — черновики вне дел.
+- `osb_draft_trebovanie_v1`, `osb_draft_proverka_v1`, `osb_draft_otstranenie_v1`, `osb_draft_unsp_v1`, `osb_draft_uksp_v1`, `osb_draft_notification_v1`, `osb_draft_protokol_oprosa_v1`, `osb_draft_zayavlenie_v1` — черновики вне дел.
 - `osb_cases_v1` — массив дел; `osb_active_v1` — `{mode:'free'|'case', caseId, docId}`.
 - Кнопки: "Очистить документ", "Сбросить всё". Лимит 5МБ → подпись даунскейлить (подпись только в профиле, в делах не дублируется).
 - Новые документы и первые черновики — пустые, с сегодняшней локальной датой; примеры только по кнопке «Пример».

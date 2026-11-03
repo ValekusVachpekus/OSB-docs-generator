@@ -935,6 +935,18 @@ details.card[open] > summary {
   margin: 0;
 }
 
+.format-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 8px 0;
+}
+
+.format-toolbar .mini { padding: 6px 12px; }
+.format-bold { font-weight: 700; }
+.format-italic { font-style: italic; }
+.format-underline { text-decoration: underline; }
+
 .subform {
   border-left: 3px solid #93c5fd;
   background: var(--bg-subtle);

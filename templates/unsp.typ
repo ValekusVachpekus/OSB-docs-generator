@@ -46,6 +46,9 @@
 )
 #set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
 
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
 // <OSB-DATA>
 #let v-date-dots = "01.10.2026"
 #let v-doc-num = "0028-СП"
@@ -103,15 +106,18 @@
     г. Арзамас, ул. Севастопольская, д. 7, \
     Нижегородская область, тел. #v-officer-phone \
     #v-date-dots № #v-doc-num \
+    #if v-show-reply [
+      На #if v-reply-num != "" [№ #v-reply-num] else [документ]#if v-reply-date != "" [ от #v-reply-date] \
+    ]
     Запрос в порядке п. 2 ч. 3 ст. 28 №1-ФЗ
   ],
   align(left + top)[
     #set par(first-line-indent: 0pt, justify: false)
     #set text(size: 11pt)
     #v(3em)
-    #v-addr-post \
-    #v-addr-rank \
-    #v-addr-fio \
+    #osb-format("v-addr-post", v-addr-post) \
+    #osb-format("v-addr-rank", v-addr-rank) \
+    #osb-format("v-addr-fio", v-addr-fio) \
     #v(1em)
     #if v-show-copy [
       #rotate(-1.5deg)[
@@ -149,16 +155,11 @@
 
 #v(0.5em)
 
-// --- Ответ на входящий ---
-#if v-show-reply [
-  #align(right)[на № #v-reply-num от #v-reply-date]
-]
-
 #v(1em)
-#align(center)[#text(weight: "bold")[#v-appeal #v-greet-fio!]]
+#align(center)[#text(weight: "bold")[#v-appeal #osb-format("v-greet-fio", v-greet-fio)!]]
 #v(0.5em)
 
-Настоящим уведомляю Вас о том, что в отношении Вас проводится служебная проверка в связи с полученной оперативной информацией о возможном нарушении Вами #v-points, а также о допущенных ими нарушениях служебной дисциплины и требований законодательства.
+Настоящим уведомляю Вас о том, что в отношении Вас проводится служебная проверка в связи с полученной оперативной информацией о возможном нарушении Вами #osb-format("v-points", v-points), а также о допущенных ими нарушениях служебной дисциплины и требований законодательства.
 
 Проверка проводится с #v-check-start на основании постановления о назначении служебной проверки от #v-postan-date в соответствии со ст. 28 Федерального закона № 1-ФЗ «О полиции».
 
@@ -206,7 +207,7 @@
           Дата: « #v-poluch-day » #v-poluch-month-gen #v-poluch-year г. \
           Время: #v-poluch-time \
           Подпись получившего: #v-poluch-sign \
-          ФИО: #v-poluch-fio
+          ФИО: #osb-format("v-poluch-fio", v-poluch-fio)
         ]
       )
     ]

@@ -1,0 +1,245 @@
+#set text(font: ("Liberation Serif", "DejaVu Serif"), size: 12pt, lang: "ru")
+#set page(
+  margin: (top: 2cm, bottom: 2cm, left: 2cm, right: 1cm),
+  fill: rgb("FBFBFB"),
+  background: {
+    let grain_tile = tiling(size: (0.4mm, 0.4mm))[
+       #place(center, circle(radius: 0.1pt, fill: black.transparentize(83%)))
+    ]
+    place(center + horizon, rect(width: 100%, height: 100%, fill: grain_tile))
+
+    for i in range(0, 120) {
+      let x = calc.rem(i * 137.5, 210) * 1mm
+      let y = calc.rem(i * 243.1, 297) * 1mm
+      let len = calc.rem(i * 7, 5) + 2
+      let ang = i * 23.5deg
+
+      place(top + left, dx: x, dy: y)[
+        #rotate(ang)[
+          #line(length: len * 1mm, stroke: 0.15pt + gray.transparentize(75%))
+        ]
+      ]
+    }
+
+    let watermark_text = rotate(-45deg, text(size: 140pt, fill: rgb(1, 1, 1, 3%))[])
+    for x in range(0, 6) {
+      for y in range(0, 8) {
+        place(top + left, dx: -5cm + x * 8cm, dy: -2cm + y * 10cm)[#watermark_text]
+      }
+    }
+
+    for i in range(0, 14) {
+      let sx = calc.rem(i * 41.7, 210) * 1mm
+      let sy = calc.rem(i * 89.3, 297) * 1mm
+      let rad = (calc.rem(i * 17, 18) + 6) * 0.12mm
+      place(top + left, dx: sx, dy: sy)[
+        #circle(radius: rad, fill: black.transparentize(97%))
+      ]
+    }
+
+    place(top + left, dx: 102mm, dy: 0mm)[
+      #rect(width: 0.35mm, height: 297mm, fill: black.transparentize(98%))
+    ]
+
+    rect(width: 100%, height: 100%, fill: gradient.radial(rgb(0,0,0,0%), rgb(0,0,0,5%), center: (50%, 50%), radius: 80%))
+  }
+)
+#set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
+
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
+// <OSB-DATA>
+#let v-date-dots = "01.10.2026"
+#let v-doc-num = "0028-СП"
+#let v-show-reply = false
+#let v-reply-num = ""
+#let v-reply-date = ""
+#let v-poluch-day = "01"
+#let v-poluch-month-gen = "октября"
+#let v-poluch-year = "2026"
+#let v-poluch-time = "00:00"
+#let v-poluch-sign = "Иванов"
+#let v-poluch-fio = "Иванов Иван Иванович"
+#let v-addr-post = "Инспектору СР ДПС"
+#let v-addr-rank = "Лейтенанту полиции"
+#let v-addr-fio = "Иванову Ивану Ивановичу"
+#let v-sign-post = "Заместитель начальника управления собственной безопасности ГУ МВД"
+#let v-sign-rank = "лейтенант полиции"
+#let v-officer-post = "Заместитель начальника управления собственной безопасности ГУ МВД"
+#let v-officer-rank = "майор полиции"
+#let v-officer-full = "Щетков Владислав Алексеевич"
+#let v-officer-short = "В.А. Щетков"
+#let v-officer-phone = "5-6-5"
+#let v-show-copy = true
+#let v-seal-l1 = "ОТДЕЛ"
+#let v-seal-l2 = "СОБСТВЕННОЙ"
+#let v-seal-l3 = "БЕЗОПАСНОСТИ"
+#let v-seal-l4 = "* ГУ МВД *"
+#let v-has-gerb = true
+#let v-has-sign = true
+#let v-has-seal-img = true
+#let v-sign-width = 25mm
+#let v-show-sign = true
+#let v-show-seal = true
+#let v-show-poluch = true
+#let v-heading = "Уведомление"
+#let v-body = "Сообщаем Вам о необходимости представить документы в УСБ ГУ МВД."
+#let v-sign-fio = "В.А. Щетков"
+// </OSB-DATA>
+
+// --- Шапка: организация слева, получатель справа ---
+#grid(
+  columns: (1.3fr, 1fr),
+  gutter: 1cm,
+  align(center + top)[
+    #set par(first-line-indent: 0pt, justify: false)
+    #if v-has-gerb [#block(width: 1.2cm)[#image("/gerb.svg")] #v(0.2em)]
+    #set text(size: 10pt, weight: "bold")
+    УПРАВЛЕНИЕ СОБСТВЕННОЙ \
+    БЕЗОПАСНОСТИ ГУ МВД \
+    ПО НИЖЕГОРОДСКОЙ ОБЛАСТИ \
+    #v(0.5em)
+    #set text(size: 9pt, weight: "regular")
+    г. Арзамас, ул. Севастопольская, д. 7, \
+    Нижегородская область, тел. #v-officer-phone \
+    #v-date-dots № #v-doc-num \
+    #if v-show-reply [
+      На #if v-reply-num != "" [№ #v-reply-num] else [документ]#if v-reply-date != "" [ от #v-reply-date] \
+    ]
+    Запрос в порядке п. 2 ч. 3 ст. 28 №1-ФЗ
+  ],
+  align(left + top)[
+    #set par(first-line-indent: 0pt, justify: false)
+    #set text(size: 11pt)
+    #v(3em)
+    #osb-format("v-addr-post", v-addr-post) \
+    #osb-format("v-addr-rank", v-addr-rank) \
+    #osb-format("v-addr-fio", v-addr-fio) \
+    #v(1em)
+    #if v-show-copy [
+      #rotate(-1.5deg)[
+        #rect(
+          width: 100%,
+          inset: 6pt,
+          stroke: 0.7pt + blue.darken(20%),
+          fill: white.transparentize(40%),
+          [
+            #set align(left)
+            #set text(size: 7.5pt, fill: blue.darken(30%))
+            #align(center)[#text(size: 10pt, weight: "bold")[КОПИЯ ВЕРНА]]
+            #v(4pt)
+            #v-officer-post, #v-officer-rank #v-officer-full
+
+            #v(8pt)
+            #grid(
+              columns: (1fr, 1.2fr),
+              align(bottom)[#v-date-dots],
+              align(bottom + right)[
+                #if v-has-sign [
+                  #block(width: 1.2cm)[#image("/sign.png")]
+                  #v-officer-short
+                ] else [
+                  #v-officer-short
+                ]
+              ]
+            )
+          ]
+        )
+      ]
+    ]
+  ]
+)
+
+#v(0.5em)
+
+#v(1em)
+#align(center)[#text(weight: "bold")[#osb-format("v-heading", v-heading)]]
+#v(0.5em)
+
+#osb-format("v-body", v-body)
+
+#v(2em)
+
+// Подпись и штампы следуют за текстом и переносятся вместе, без наложения на абзацы.
+#block(width: 100%, breakable: false)[
+// --- Подпись ---
+#if v-show-sign [
+  #grid(
+    columns: (1.5fr, 1fr),
+    [#osb-format("v-sign-post", v-sign-post)],
+    align(bottom + right)[
+      #osb-format("v-sign-rank", v-sign-rank) \
+      #if v-has-sign [
+        #stack(
+          dir: ltr,
+          spacing: 5pt,
+          block(width: v-sign-width)[#image("/sign.png")],
+          [#osb-format("v-sign-fio", v-sign-fio)]
+        )
+      ] else [
+        #osb-format("v-sign-fio", v-sign-fio)
+      ]
+    ]
+  )
+]
+
+#v(1em)
+#grid(
+  columns: (1fr, 1fr),
+  gutter: 8mm,
+  [
+// --- Круглая печать ---
+#if v-show-seal [
+  #align(left)[
+    #rotate(-8deg)[
+      #if v-has-seal-img [
+        #block(width: 42mm)[#image("/seal.png")]
+      ] else [
+        #box(width: 46mm, height: 46mm)[
+          #place(center)[#circle(radius: 22mm, stroke: 1.4pt + blue.darken(30%))]
+          #place(center)[#circle(radius: 16.5mm, stroke: 0.8pt + blue.darken(30%))]
+          #place(center)[
+            #align(center)[
+              #set text(size: 6pt, fill: blue.darken(30%))
+              #set par(first-line-indent: 0pt, leading: 0.5em)
+              #v-seal-l1 \
+              #v-seal-l2 \
+              #v-seal-l3 \
+              #v-seal-l4
+            ]
+          ]
+        ]
+      ]
+    ]
+  ]
+]
+  ],
+  [
+// --- Отметка о получении ---
+#if v-show-poluch [
+  #align(right)[
+    #rotate(2.1deg)[
+      #rect(
+        width: 52mm,
+        inset: 6pt,
+        stroke: 0.6pt + red.darken(10%).transparentize(30%),
+        fill: white.transparentize(58%),
+        [
+          #set text(size: 8.5pt, fill: red.darken(10%).transparentize(10%))
+          #set par(first-line-indent: 0pt, justify: false)
+          #align(center)[#text(weight: "bold")[ОТМЕТКА О ПОЛУЧЕНИИ]]
+          #v(2pt)
+          Дата: « #v-poluch-day » #v-poluch-month-gen #v-poluch-year г. \
+          Время: #v-poluch-time \
+          Подпись получившего: #osb-format("v-poluch-sign", v-poluch-sign) \
+          ФИО: #osb-format("v-poluch-fio", v-poluch-fio)
+        ]
+      )
+    ]
+  ]
+]
+
+  ],
+)
+]

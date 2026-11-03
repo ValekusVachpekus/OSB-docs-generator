@@ -49,6 +49,9 @@
 // Абзацы из многострочного поля: каждая непустая строка — отдельный абзац.
 #let v-lines(text) = text.split("\n").map(l => l.trim()).filter(l => l != "").map(l => par(l)).join()
 
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
 // <OSB-DATA>
 #let v-day = "12"
 #let v-month-gen = "апреля"
@@ -122,7 +125,7 @@
   columns: (1fr, 1fr, 1fr),
   align: (left, center, right),
   [« #v-day » #v-month-gen #v-year г.],
-  [#v-city],
+  [#osb-format("v-city", v-city)],
   [№ #v-num]
 )
 
@@ -134,7 +137,7 @@
   align(left + top)[
     #set par(first-line-indent: 0pt, justify: false)
     #set text(size: 11pt)
-    #v-about
+    #osb-format("v-about", v-about)
   ],
   rotate(-1.5deg)[
     #move(dx: 5pt, dy: -10pt)[
@@ -178,14 +181,14 @@
 #v(1.5em)
 
 #if v-intro.trim() != "" [
-  #v-lines(v-intro)
+  #osb-format("v-intro", v-lines(v-intro))
   #v(1em)
 ]
 
 #if v-show-ustanovil [
   #align(center)[#text(weight: "bold")[У С Т А Н О В И Л:]]
   #v(0.5em)
-  #if v-ustanovil.trim() != "" [#v-lines(v-ustanovil)]
+  #if v-ustanovil.trim() != "" [#osb-format("v-ustanovil", v-lines(v-ustanovil))]
   #v(1em)
 ]
 
@@ -193,7 +196,7 @@
 #v(0.5em)
 
 #if v-prikaz.trim() != "" [
-  #v-lines(v-prikaz)
+  #osb-format("v-prikaz", v-lines(v-prikaz))
 ] else [
   #v(1em)
 ]
@@ -312,8 +315,8 @@
           #v(2pt)
           Дата: « #v-vruch-day » #v-vruch-month-gen #v-vruch-year г. \
           Время: #v-vruch-time \
-          Подпись получившего: #if v-vruch-sign.trim() != "" [#v-vruch-sign] else [\_\_\_\_\_\_\_\_] \
-          ФИО: #if v-vruch-fio.trim() != "" [#v-vruch-fio] else [\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_]
+          Подпись получившего: #if v-vruch-sign.trim() != "" [#osb-format("v-vruch-sign", v-vruch-sign)] else [\_\_\_\_\_\_\_\_] \
+          ФИО: #if v-vruch-fio.trim() != "" [#osb-format("v-vruch-fio", v-vruch-fio)] else [\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_\_]
         ]
       )
     ]

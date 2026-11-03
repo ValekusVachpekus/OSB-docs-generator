@@ -46,6 +46,85 @@ test('Document names remain unique after deletions and renames', () => {
   assert.equal(run('autoDocName({docs:[{tpl:"proverka",name:"Заявление в УСБ"}]},"zayavlenie")'), 'Заявление в УСБ 2');
 });
 
+test('Free notification keeps its own draft, profile fallbacks and JSON fields', () => {
+  const {run, store} = setup();
+  run('state.template = "notification"; state.docs.notification.heading = "Ответ"; state.docs.notification.body = "**Важно**"; saveLS("document")');
+  assert.equal(JSON.parse(store.get('osb_draft_notification_v1')).body, '**Важно**');
+  assert.equal(run('state.docs.unsp.doc_num'), '');
+  assert.equal(run('buildData()["v-sign-fio"]'), 'В.А. Щетков');
+  run('state.docs.notification.sign_fio = "И.И. Петров"; state.docs.notification.poluch_fio = "Иванов Иван Иванович"');
+  assert.equal(run('buildData()["v-sign-fio"]'), 'И.И. Петров');
+  assert.equal(run('buildData()["v-poluch-fio"]'), 'Иванов Иван Иванович');
+  assert.equal(run('DATA_KEYS.notification.every(k => Object.hasOwn(buildData(), k))'), true);
+  assert.equal(run('parseCaseBackup({v:1,app:"osb-docs",docs:[{tpl:"notification",data:{heading:"Ответ",body:"**Важно**"}}]},"test.json").caseData.docs[0].data.body'), '**Важно**');
+});
+
+test('Formatting preserves spaces, nests styles and treats Typst code as literal text', () => {
+  const {ctx,run} = setup();
+  assert.equal(run('inlineTypst("До **жирный** после")'), '[#text("До ")#strong([#text("жирный")])#text(" после")]');
+  assert.match(run('inlineTypst("**жирный *курсив***")'), /#strong\(\[#text\("жирный "\)#emph\(\[#text\("курсив"\)\]\)\]\)/);
+  assert.match(run('inlineTypst("__линия__")'), /#underline/);
+  assert.equal(run('inlineTypst("Незакрытый **текст")'), '[#text("Незакрытый ")#text("**")#text("текст")]');
+  ctx.escaped = String.raw`\*звёздочки\*`;
+  assert.equal(run('inlineTypst(escaped)'), '[#text("*звёздочки*")]');
+  ctx.tricky = '#panic("no") [ ] $& <tag> @x \\ test';
+  ctx.result = run('formattedTypst(tricky,true)');
+  assert.equal(ctx.result, '[#text("#panic(\\"no\\") [ ] $& <tag> @x \\\\ test")]');
+  assert.match(run('formattedTypst("3. Первый\\n4. Второй\\n\\nАбзац\\n- Пункт", true)'), /#enum\(.*start: 3,/);
+  assert.match(run('formattedTypst("3. Первый\\n4. Второй\\n\\nАбзац\\n- Пункт", true)'), /#list\(/);
+});
+
+test('Notification reply flags handle partial references without changing stored values', () => {
+  const {run} = setup();
+  for (const tpl of ['unsp', 'uksp', 'notification']) {
+    run(`state.template = "${tpl}"; Object.assign(workData(), {reply_num:"   ",reply_date:""})`);
+    assert.equal(run('buildData()["v-show-reply"]'), false);
+    run('workData().reply_date = "2026-11-03"');
+    assert.equal(run('buildData()["v-show-reply"]'), true);
+    assert.equal(run('buildData()["v-reply-num"]'), '');
+    assert.equal(run('buildData()["v-reply-date"]'), '03.11.2026');
+    run('workData().reply_date = ""; workData().reply_num = "  12/34  "');
+    assert.equal(run('buildData()["v-reply-num"]'), '12/34');
+    assert.equal(run('workData().reply_num'), '  12/34  ');
+  }
+});
+
+test('Formatting selected paragraphs preserves list structure and dispatches input', () => {
+  const {ctx,run} = setup();
+  ctx.Event = Event;
+  let events = 0;
+  ctx.editor = {
+    value:'1. Первый\n2. Второй', selectionStart:0, selectionEnd:18,
+    focus(){}, dispatchEvent(event){ assert.equal(event.type, 'input'); events++; },
+    setRangeText(text,start,end) {
+      this.value = this.value.slice(0,start) + text + this.value.slice(end);
+      this.selectionStart = start; this.selectionEnd = start + text.length;
+    },
+    setSelectionRange(start,end){ this.selectionStart=start; this.selectionEnd=end; },
+  };
+  ctx.editor.selectionEnd = ctx.editor.value.length;
+  run('applyTextFormat(editor, "bold")');
+  assert.equal(ctx.editor.value, '1. **Первый**\n2. **Второй**');
+  run('applyTextFormat(editor, "bullet")');
+  assert.equal(ctx.editor.value, '- **Первый**\n- **Второй**');
+  ctx.editor.value = ''; ctx.editor.selectionStart = ctx.editor.selectionEnd = 0;
+  run('applyTextFormat(editor, "number")');
+  assert.equal(ctx.editor.value, '1. текст');
+  assert.equal(events, 3);
+});
+
+test('Hiding formatting buttons persists globally and does not change document rendering', () => {
+  const {run,store} = setup();
+  const version = run('documentVersion()');
+  const data = run('JSON.stringify(buildData())');
+  run('state.profile.hide_formatting = true; saveLS("profile")');
+  assert.equal(JSON.parse(store.get('osb_profile_v1')).hide_formatting, true);
+  assert.equal(run('documentVersion()'), version);
+  assert.equal(run('JSON.stringify(buildData())'), data);
+  const restored = setup(Object.fromEntries(store));
+  assert.equal(restored.run('state.profile.hide_formatting'), true);
+});
+
 test('Notification pronoun follows subject sex without recomposing text', () => {
   const {run} = setup();
   run('state.template = "proverka"; state.docs.proverka.subj_sex = "f"');

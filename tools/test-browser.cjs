@@ -99,7 +99,112 @@ const { chromium } = require(process.env.OSB_PLAYWRIGHT_PATH || 'playwright');
     await importBackup({v:1,app:'osb-docs',docs:[{tpl:'zayavlenie',data:{appl_fio:'Петров'}},{tpl:'unknown',data:{}}]});
     assert.equal(await page.evaluate(() => state.cases.length), count+1);
     assert.match(await page.locator('#status').textContent(), /Пропущено неизвестных шаблонов: 1/);
+
+    const pdfContents = () => page.evaluate(async () => {
+      const pdf = await pdfjsLib.getDocument({data:compiledSnapshot.bytes.slice()}).promise;
+      try {
+        const pages = [];
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const p = await pdf.getPage(i), content = await p.getTextContent();
+          pages.push({width:p.view[2], items:content.items.map(x => ({text:x.str,x:x.transform[4],y:x.transform[5]}))});
+        }
+        return pages;
+      } finally { await pdf.destroy(); }
+    });
+    await ready(() => page.evaluate(() => setActiveFree()));
+    for (const [tpl,field] of Object.entries({trebovanie:'violator',proverka:'violation',otstranenie:'prikaz',
+      unsp:'points',uksp:'est_text',notification:'body',protokol_oprosa:'a1',zayavlenie:'content'})) {
+      await ready(() => page.locator(`[data-t="${tpl}"]`).click());
+      await ready(() => page.locator('#btnFill').click());
+      const input = page.locator(`[data-fk="${field}"]`);
+      assert.equal(await input.locator('..').getByRole('button',{name:'Жирный',exact:true}).count(), 1);
+      assert.equal(await input.locator('..').getByRole('button',{name:'Нумерованный список',exact:true}).count(), 1);
+      await ready(() => input.fill('До **жирный** после, *курсив*, __линия__.\n1. Первый\n2. Второй\n- Пункт'));
+      const text = (await pdfContents()).flatMap(p => p.items.map(x => x.text)).join(' ').replace(/\s+/g,' ');
+      assert.match(text, /До жирный после/);
+      assert.ok(!text.includes('**жирный**'));
+      assert.ok(!text.includes('[До'));
+      if (process.env.OSB_ARTIFACT_DIR) {
+        fs.mkdirSync(process.env.OSB_ARTIFACT_DIR, {recursive:true});
+        fs.writeFileSync(`${process.env.OSB_ARTIFACT_DIR}/${tpl}-formatted.pdf`, Buffer.from(await page.evaluate(() => Array.from(compiledSnapshot.bytes))));
+      }
+    }
+    for (const tpl of ['unsp','uksp','notification']) {
+      await ready(() => page.locator(`[data-t="${tpl}"]`).click());
+      await ready(() => page.locator('#btnFill').click());
+      await page.locator('[data-fk="reply_num"]').fill('ВХ-777');
+      await ready(() => page.locator('[data-fk="reply_date"]').fill('2026-11-03'));
+      const first = (await pdfContents())[0];
+      const reply = first.items.find(x => x.text.includes('ВХ-777'));
+      assert.ok(reply, `${tpl}: reply reference missing`);
+      assert.ok(reply.x < first.width / 2, `${tpl}: reply reference must be in left header`);
+      const title = first.items.find(x => x.text.includes(tpl === 'notification' ? 'Уведомление' : 'Уважаемый'));
+      assert.ok(reply.y > title.y, `${tpl}: reply reference must precede body`);
+      if (process.env.OSB_ARTIFACT_DIR) {
+        fs.mkdirSync(process.env.OSB_ARTIFACT_DIR, {recursive:true});
+        fs.writeFileSync(`${process.env.OSB_ARTIFACT_DIR}/${tpl}.pdf`, Buffer.from(await page.evaluate(() => Array.from(compiledSnapshot.bytes))));
+      }
+      await ready(() => page.locator('[data-fk="reply_num"]').fill(''));
+      assert.match((await pdfContents())[0].items.map(x => x.text).join(' '), /На документ от 03\.11\.2026/);
+    }
+    const body = page.locator('[data-fk="body"]');
+    await body.fill('До выделения после');
+    await body.evaluate(el => { el.focus(); el.setSelectionRange(3,12); });
+    await ready(() => body.locator('..').getByRole('button',{name:'Жирный',exact:true}).click());
+    assert.equal(await body.inputValue(), 'До **выделения** после');
+    await body.fill('Первый\nВторой');
+    await body.evaluate(el => { el.focus(); el.select(); });
+    await ready(() => body.locator('..').getByRole('button',{name:'Нумерованный список',exact:true}).click());
+    assert.equal(await body.inputValue(), '1. Первый\n2. Второй');
+    await ready(() => body.fill('До **жирный** после, *курсив*, __линия__.\n1. Первый\n2. Второй\n- Пункт\n#panic("буквально") [ ] $&'));
+    const formattedText = (await pdfContents()).flatMap(p => p.items.map(x => x.text)).join(' ').replace(/\s+/g,' ');
+    assert.match(formattedText, /До жирный после/);
+    assert.ok(!formattedText.includes('**'));
+    assert.match(formattedText, /#panic/);
+    assert.equal(await page.locator('#errorBox').isVisible(), false);
+    if (process.env.OSB_ARTIFACT_DIR) {
+      fs.writeFileSync(`${process.env.OSB_ARTIFACT_DIR}/notification-formatted.pdf`, Buffer.from(await page.evaluate(() => Array.from(compiledSnapshot.bytes))));
+      await page.screenshot({path:`${process.env.OSB_ARTIFACT_DIR}/notification-ui.png`, fullPage:true});
+    }
+    const savedBody = await body.inputValue();
+    await page.reload();
+    await page.waitForFunction(() => window.__compileSeq > 0, null, {timeout:90000});
+    assert.equal(await body.inputValue(), savedBody);
+    assert.equal(await page.locator('.format-hint').count(), 0);
+    await page.locator('details.profile > summary').click();
+    const hideFormatting = page.getByLabel('Скрыть кнопки форматирования', {exact:true});
+    const beforeToggle = await page.evaluate(() => window.__compileSeq);
+    await hideFormatting.check();
+    assert.equal(await page.locator('.format-toolbar:visible').count(), 0);
+    assert.equal(await body.inputValue(), savedBody);
+    assert.equal(await page.evaluate(() => window.__compileSeq), beforeToggle);
+    await ready(() => body.fill('Текст **жирный** после, *курсив* и __линия__.'));
+    assert.match((await pdfContents()).flatMap(p=>p.items.map(x=>x.text)).join(' ').replace(/\s+/g,' '), /Текст жирный после/);
+    await page.reload();
+    await page.waitForFunction(() => window.__compileSeq > 0, null, {timeout:90000});
+    assert.equal(await page.locator('.format-toolbar:visible').count(), 0);
+    await page.locator('details.profile > summary').click();
+    assert.equal(await hideFormatting.isChecked(), true);
+    await hideFormatting.uncheck();
+    assert.ok(await page.locator('.format-toolbar:visible').count() > 0);
+    await page.locator('details.profile > summary').click();
+    const longBody = Array.from({length:55}, (_,i) => `Абзац ${i+1}. Длинное свободное уведомление с переносом текста на следующую страницу.`).join('\n');
+    await ready(() => body.fill(longBody));
+    const longPdf = await pdfContents();
+    assert.ok(longPdf.length > 1);
+    const lastPage = longPdf.at(-1).items.map(x => x.text).join(' ');
+    assert.match(lastPage, /ОТМЕТКА О ПОЛУЧЕНИИ/);
+    assert.match(longPdf.flatMap(p=>p.items.map(x=>x.text)).join(' '), /Абзац 55/);
+    await page.evaluate(() => openModal('create'));
+    await page.locator('#modalName').fill('Свободные уведомления');
+    await page.locator('#modalOk').click();
+    await ready(() => page.evaluate(() => addDocToCase('notification')));
+    await ready(() => page.locator('#btnFill').click());
+    const backup = await page.evaluate(() => ({v:1,app:'osb-docs',title:'Копия дела',docs:getActiveCase().docs}));
+    await importBackup(backup);
+    assert.equal(await page.evaluate(() => workTpl()), 'notification');
+    assert.equal(await body.inputValue(), backup.docs[0].data.body);
     assert.deepEqual(errors, []);
-    console.log('Browser OK: real Typst/PDF/JPG, dollar text, blank documents, persistence, source selector, quota status, JSON validation.');
+    console.log('Browser OK: real Typst/PDF/JPG, reply placement in all notifications, rich text toolbar, long notification, drafts/cases/JSON, existing regressions.');
   } finally { await browser.close(); }
 })().catch(e => { console.error(e); process.exitCode = 1; });

@@ -11,7 +11,7 @@ const LS_TEMPLATE = 'osb_template_v1';
 const LS_CASES = 'osb_cases_v1';
 const LS_ACTIVE = 'osb_active_v1';
 const LS_DRAFT = t => `osb_draft_${t}_v1`;
-const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Приказ', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в УСБ' };
+const TPL_NAMES = { trebovanie: 'Требование (beta)', proverka: 'Постановление на СП', otstranenie: 'Приказ', unsp: 'Уведомление о начале СП', uksp: 'Уведомление об окончании СП', notification: 'Свободное уведомление', protokol_oprosa: 'Протокол опроса', zayavlenie: 'Заявление в УСБ' };
 /* Краткая информация о документе (иконка ⓘ в заголовке). */
 const DOC_INFO = {
   trebovanie: 'Пока что в разработке.',
@@ -19,6 +19,7 @@ const DOC_INFO = {
   otstranenie: 'Универсальный приказ: заголовок «О чём», вводная часть, блок «Установил» (можно убрать галкой) и текст «Приказываю». Даты, подпись и штампы оформляются автоматически.',
   unsp: 'Документ, нужный для уведомления заинтересованных лиц о начале СП. Указываются обстоятельства происшествия, послужившего основанием СП, а также дата. Вручается заинтересованным лицам. (ООС: на форум в приёмную организации, либо в IC отыгровками вручается, копия — в ВК/TG.)',
   uksp: 'Документ, нужный для уведомления заинтересованных лиц об окончании СП. Указываются обстоятельства происшествия, послужившего основанием СП, установленные результаты проверки и дата. Вручается заинтересованным лицам. (ООС: на форум в приёмную организации, либо в IC отыгровками вручается, копия — в ВК/TG.)',
+  notification: 'Уведомление с произвольным заголовком и текстом. Шапка — как у уведомлений о начале и окончании СП. Получатель и подпись настраиваются. В заголовке и тексте доступны жирный, курсив, подчёркивание; в тексте — списки. Обязательные формулировки о служебной проверке не добавляются.',
   protokol_oprosa: 'Протокол проведения опроса. Фиксируются данные опрашиваемого, вопросы и ответы на них. Вопросы и ответы записывать без потери смысла и вырывания из контекста.',
   zayavlenie: 'Заявление на сотрудника полиции в УСБ о нарушении ВУ или законодательства. Пишутся данные заявителя и обстоятельства произошедшего, прилагаются видеозапись или иные доказательства. Заявителю выдаётся талон-уведомление.'
 };
@@ -65,6 +66,14 @@ const DATA_KEYS = {
     'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
     'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-copy','v-show-sign','v-show-seal',
     'v-show-poluch','v-poluch-day','v-poluch-month-gen','v-poluch-year','v-poluch-time','v-poluch-sign','v-poluch-fio'],
+  notification: ['v-date-dots','v-doc-num','v-show-reply','v-reply-num','v-reply-date',
+    'v-heading','v-body',
+    'v-addr-post','v-addr-rank','v-addr-fio',
+    'v-sign-post','v-sign-rank','v-sign-fio',
+    'v-officer-post','v-officer-rank','v-officer-full','v-officer-short','v-officer-phone',
+    'v-seal-l1','v-seal-l2','v-seal-l3','v-seal-l4',
+    'v-has-gerb','v-has-sign','v-has-seal-img','v-sign-width','v-show-copy','v-show-sign','v-show-seal',
+    'v-show-poluch','v-poluch-day','v-poluch-month-gen','v-poluch-year','v-poluch-time','v-poluch-sign','v-poluch-fio'],
   protokol_oprosa: ['v-place','v-day','v-month-gen','v-year2','v-start-h','v-start-m','v-end-h','v-end-m',
     'v-officer-post','v-officer-title','v-officer-short',
     'v-fio','v-birth-date','v-birth-place','v-address','v-phone','v-citizenship','v-education',
@@ -91,7 +100,7 @@ const DEFAULT_PROFILE = {
   osb_full: 'Леонов Данила Сергеевич', osb_short: 'Д.С. Леонов', osb_sign: 'Леонов',
   gu_post: 'Начальник ГУ МВД', gu_rank: 'генерал-лейтенант полиции',
   gu_full: 'Егоров Дионис Иванович', gu_short: 'Д.И. Егоров', gu_sign: 'Егоров',
-  signature: 'default', sign_width: 25, sign_clean: true,
+  signature: 'default', sign_width: 25, sign_clean: true, hide_formatting: false,
 };
 const STAMPS_DEF = {
   show_bottom_sign: true,
@@ -168,6 +177,14 @@ const DEFAULT_DOCS = {
     penalty: 'выговоре',
     show_sign: true, show_seal: true, show_copy: true,
     show_poluch: true, poluch_date: '2026-10-15', poluch_time: '00:00' },
+  notification: { date: '2026-10-15', doc_num: '0032', reply_num: '', reply_date: '',
+    addr_post: 'Инспектору СР ДПС', addr_rank: 'Лейтенанту полиции', addr_fio: 'Иванову Ивану Ивановичу',
+    heading: 'Уведомление',
+    body: 'Уважаемый Иванов Иван Иванович!\nСообщаем Вам о необходимости предоставить следующие документы:\n1. **Письменное объяснение** по указанным обстоятельствам.\n2. Копии подтверждающих документов.\nДокументы просим направить в УСБ ГУ МВД.',
+    sign_post: '', sign_rank: '', sign_fio: '',
+    show_sign: true, show_seal: true, show_copy: true,
+    show_poluch: true, poluch_date: '2026-10-15', poluch_time: '12:00',
+    poluch_fio: 'Иванов Иван Иванович', poluch_sign: 'Иванов' },
   protokol_oprosa: { place: 'г. Арзамас, ул. Пионерская, д. 1',
     date: '2026-05-29', start_time: '10:00', end_time: '10:30',
     fio: 'Иванов Иван Иванович', birth_date: '1 января 1990 года',
@@ -203,6 +220,9 @@ const DEFAULT_DOCS = {
 
 /* ---------- схемы форм ---------- */
 const PROFILE_SECTIONS = [
+  { title: 'Настройки редактора', fields: [
+    { k: 'hide_formatting', label: 'Скрыть кнопки форматирования', type: 'check' },
+  ]},
   { title: 'Сотрудник УСБ', fields: [
     { k: 'officer_post', label: 'Должность', type: 'text', req: 1 },
     { k: 'officer_rank', label: 'Звание', type: 'datalist', opts: RANKS, req: 1 },
@@ -427,6 +447,37 @@ const DOC_SCHEMAS = {
         sub: 'Получивший подставится из данных получателя автоматически' },
     ]},
   ],
+  notification: [
+    { title: 'Получатель', fields: [
+      { k: 'addr_post', label: 'Должность (кому)', type: 'text' },
+      { k: 'addr_rank', label: 'Звание (кому)', type: 'text' },
+      { k: 'addr_fio', label: 'ФИО (кому)', type: 'text' },
+    ]},
+    { title: 'Документ', fields: [
+      { k: 'date', label: 'Дата уведомления', type: 'date', req: 1 },
+      { k: 'doc_num', label: 'Номер уведомления', type: 'text', req: 1 },
+      { k: 'reply_num', label: 'На № (ответ на входящий)', type: 'text' },
+      { k: 'reply_date', label: 'От (дата входящего)', type: 'date' },
+      { k: 'heading', label: 'Заголовок', type: 'textarea', format: 'inline', req: 1 },
+      { k: 'body', label: 'Текст уведомления', type: 'textarea', format: 'blocks', req: 1,
+        sub: 'Каждая строка — отдельный абзац. Обращение и заключительные формулировки включите в текст по необходимости.' },
+    ]},
+    { title: 'Подпись и печать', fields: [
+      { k: 'sign_post', label: 'Должность подписанта', type: 'textarea', sub: 'Пусто — из постоянных данных' },
+      { k: 'sign_rank', label: 'Звание подписанта', type: 'text', sub: 'Пусто — из постоянных данных' },
+      { k: 'sign_fio', label: 'ФИО подписанта', type: 'text', sub: 'Пусто — из постоянных данных' },
+      { k: 'show_copy', label: 'Поставить штамп «Копия верна»', type: 'check' },
+      { k: 'show_sign', label: 'Поставить подпись', type: 'check' },
+      { k: 'show_seal', label: 'Поставить круглую печать', type: 'check' },
+    ]},
+    { title: 'Отметка о получении', fields: [
+      { k: 'show_poluch', label: 'Поставить отметку о получении', type: 'check' },
+      { k: 'poluch_date', label: 'Дата получения', type: 'date', showIf: 'show_poluch' },
+      { k: 'poluch_time', label: 'Время получения', type: 'time', showIf: 'show_poluch' },
+      { k: 'poluch_fio', label: 'ФИО получившего (именит. падеж)', type: 'text', showIf: 'show_poluch' },
+      { k: 'poluch_sign', label: 'Подпись получившего (текст)', type: 'text', showIf: 'show_poluch' },
+    ]},
+  ],
   protokol_oprosa: [
     { title: 'Документ', fields: [
       { k: 'place', label: 'Место составления', type: 'text', req: 1 },
@@ -513,6 +564,32 @@ const DOC_SCHEMAS = {
   ],
 };
 
+// Поля, печатаемые как текст: дата, номера и данные для склонения остаются обычными контролами.
+// Имена v-* получаются из ключей полей заменой подчёркивания на дефис.
+const TEXT_FIELDS = {
+  trebovanie: { city:'inline', title_tail:'inline', preamble_article:'inline', violator:'blocks',
+    demand_article:'inline', auto:'inline', liability:'inline', acq_post:'inline', acq_sign:'inline', acq_short:'inline' },
+  proverka: { city:'inline', target_title:'inline', supervision:'blocks', violation:'blocks', suspend_target:'inline', notify_fio:'inline' },
+  otstranenie: { city:'inline', about:'inline', intro:'blocks', ustanovil:'blocks', prikaz:'blocks', vruch_fio:'inline', vruch_sign:'inline' },
+  unsp: { addr_post:'inline', addr_rank:'inline', addr_fio:'inline', greet_fio:'inline', points:'blocks' },
+  uksp: { addr_post:'inline', addr_rank:'inline', addr_fio:'inline', greet_fio:'inline', what:'inline', est_text:'blocks', penalty:'inline' },
+  notification: { addr_post:'inline', addr_rank:'inline', addr_fio:'inline', heading:'inline', body:'blocks',
+    sign_post:'inline', sign_rank:'inline', sign_fio:'inline', poluch_fio:'inline', poluch_sign:'inline' },
+  protokol_oprosa: { place:'inline', fio:'inline', birth_date:'inline', birth_place:'inline', address:'inline',
+    citizenship:'inline', education:'inline', family:'inline', work:'inline', military:'inline', conviction:'inline',
+    passport:'blocks', other:'blocks', sig:'inline',
+    ...Object.fromEntries(Array.from({length:9}, (_,i) => [[`q${i+1}`,'inline'],[`a${i+1}`,'blocks']]).flat()) },
+  zayavlenie: { boss_to:'inline', appl_fio:'inline', appl_birth:'inline', appl_address:'inline', appl_passport:'inline',
+    target:'inline', event_place:'inline', content:'blocks', request:'blocks', brief:'inline', appl_sign:'inline' },
+};
+for (const [tpl, fields] of Object.entries(TEXT_FIELDS)) {
+  for (const field of DOC_SCHEMAS[tpl].flatMap(section => section.fields || [])) {
+    if (!fields[field.k]) continue;
+    field.format = fields[field.k];
+    if (field.format === 'blocks') field.type = 'textarea';
+  }
+}
+
 /* Переименование в текстовых значениях; технические ключи и формат JSON прежние. */
 function renameOrganization(value) {
   if (typeof value === 'string') {
@@ -554,6 +631,7 @@ const state = {
     otstranenie: loadLS(LS_DRAFT('otstranenie'), emptyDocument('otstranenie')),
     unsp: loadLS(LS_DRAFT('unsp'), emptyDocument('unsp')),
     uksp: loadLS(LS_DRAFT('uksp'), emptyDocument('uksp')),
+    notification: loadLS(LS_DRAFT('notification'), emptyDocument('notification')),
     protokol_oprosa: loadLS(LS_DRAFT('protokol_oprosa'), emptyDocument('protokol_oprosa')),
     zayavlenie: loadLS(LS_DRAFT('zayavlenie'), emptyDocument('zayavlenie')),
   },
@@ -676,6 +754,110 @@ function escTyp(s) {
     .replace(/"/g, '\\"')
     .replace(/\n/g, '\\n');
   return '"' + v + '"';
+}
+// Ограниченная разметка: только текст и известные функции оформления, без eval/Typst-кода.
+function inlineTypst(value, plainText = false) {
+  const source = String(value ?? '');
+  const literal = text => '"' + text.replace(/\\/g, '\\\\').replace(/"/g, '\\"')
+    .replace(/[\u0000-\u001f]/g, char => `\\u{${char.charCodeAt(0).toString(16)}}`) + '"';
+  let pos = 0;
+  const markers = [['***', 'both'], ['**', 'strong'], ['__', 'underline'], ['*', 'emph']];
+  const styled = (kind, content) => kind === 'both'
+    ? `#strong([#emph([${content}])])` : `#${kind}([${content}])`;
+  function read(stop = '', depth = 0) {
+    let out = '', plain = '';
+    const flush = () => { if (plain) { out += plainText ? plain : `#text(${literal(plain)})`; plain = ''; } };
+    while (pos < source.length) {
+      if (source[pos] === '\\' && /[*_\\]/.test(source[pos + 1] || '')) {
+        plain += source[pos + 1]; pos += 2; continue;
+      }
+      if (stop && source.startsWith(stop, pos)
+          && !(stop === '*' && source.startsWith('**', pos) && !source.startsWith('***', pos))) {
+        flush(); pos += stop.length; return { content: out, closed: true };
+      }
+      const marker = depth < 16 && markers.find(([token]) => source.startsWith(token, pos));
+      if (marker) {
+        flush(); pos += marker[0].length;
+        const inner = read(marker[0], depth + 1);
+        out += inner.closed ? (plainText ? inner.content : styled(marker[1], inner.content))
+          : (plainText ? marker[0] : `#text(${escTyp(marker[0])})`) + inner.content;
+      } else { plain += source[pos++]; }
+    }
+    flush(); return { content: out, closed: false };
+  }
+  const content = read().content;
+  return plainText ? content : `[${content}]`;
+}
+function plainFormattedText(value) {
+  return String(value ?? '').split('\n').map(line => inlineTypst(line.replace(/^\s*(?:[-•]|\d+[.)])\s+/, ''), true)).join('\n');
+}
+function formattedTypst(value, blocks = false) {
+  if (!blocks) return `[${String(value ?? '').replace(/\r\n?/g, '\n').split('\n').map(line => inlineTypst(line).slice(1, -1)).join('#linebreak()')}]`;
+  const lines = String(value ?? '').replace(/\r\n?/g, '\n').split('\n');
+  const out = [];
+  for (let i = 0; i < lines.length;) {
+    const line = lines[i].trim();
+    if (!line) { i++; continue; }
+    const bullet = /^[-•]\s+/.exec(line);
+    const number = /^(\d{1,6})[.)]\s+/.exec(line);
+    if (bullet || number) {
+      const items = [], start = number ? +number[1] : 1;
+      while (i < lines.length) {
+        const match = (bullet ? /^[-•]\s+(.+)$/ : /^(\d{1,6})[.)]\s+(.+)$/).exec(lines[i].trim());
+        if (!match || (number && +match[1] !== start + items.length)) break;
+        items.push(inlineTypst(bullet ? match[1] : match[2])); i++;
+      }
+      out.push(`#${bullet ? 'list' : 'enum'}(indent: 1.25cm, body-indent: 0.5em, tight: true, ${number ? `start: ${start}, ` : ''}${items.join(', ')})`);
+    } else { out.push(inlineTypst(line).slice(1, -1)); i++; }
+  }
+  return `[${out.join('#parbreak()')}]`;
+}
+function applyTextFormat(input, kind) {
+  const start = input.selectionStart, end = input.selectionEnd;
+  if (kind === 'bullet' || kind === 'number') {
+    const from = start === 0 ? 0 : input.value.lastIndexOf('\n', start - 1) + 1;
+    const last = end > start && input.value[end - 1] === '\n' ? end - 1 : end;
+    const next = input.value.indexOf('\n', last);
+    const to = next < 0 ? input.value.length : next;
+    const selected = (input.value.slice(from, to) || 'текст').split('\n');
+    let n = 0;
+    const text = selected.map(line => line.trim()
+      ? (kind === 'bullet' ? '- ' : `${++n}. `) + line.replace(/^\s*(?:[-•]|\d+[.)])\s+/, '')
+      : line).join('\n');
+    input.setRangeText(text, from, to, 'select');
+  } else {
+    const marker = { bold: '**', italic: '*', underline: '__' }[kind];
+    const selected = input.value.slice(start, end);
+    const text = selected || 'текст';
+    const formatted = text.split('\n').map(line => {
+      if (!line.trim()) return line;
+      const list = /^(\s*(?:[-•]|\d+[.)])\s+)(.*)$/.exec(line);
+      return list ? list[1] + marker + list[2] + marker : marker + line + marker;
+    }).join('\n');
+    input.setRangeText(formatted, start, end, 'select');
+    if (!text.includes('\n')) {
+      const prefix = formatted.indexOf(marker);
+      input.setSelectionRange(start + prefix + marker.length, start + formatted.length - marker.length);
+    }
+  }
+  input.focus(); input.dispatchEvent(new Event('input', { bubbles: true }));
+}
+function formattingToolbar(input, mode) {
+  const bar = document.createElement('div');
+  bar.className = 'format-toolbar';
+  bar.hidden = !!state.profile.hide_formatting;
+  bar.setAttribute('role', 'group'); bar.setAttribute('aria-label', 'Форматирование текста');
+  const buttons = [['bold', 'Ж', 'Жирный'], ['italic', 'К', 'Курсив'], ['underline', 'Ч', 'Подчёркнутый']];
+  if (mode === 'blocks') buttons.push(['bullet', '• Список', 'Маркированный список'], ['number', '1. Список', 'Нумерованный список']);
+  for (const [kind, label, title] of buttons) {
+    const button = document.createElement('button');
+    button.type = 'button'; button.className = `mini format-${kind}`;
+    button.textContent = label; button.title = title; button.setAttribute('aria-label', title);
+    button.onmousedown = event => event.preventDefault();
+    button.onclick = () => applyTextFormat(input, kind);
+    bar.append(button);
+  }
+  return bar;
 }
 function isoParts(iso) {
   const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(iso || '');
@@ -821,6 +1003,12 @@ function fieldNode(sec, f, values, onChange, scope) {
     inp.oninput = () => { values[f.k] = inp.type === 'number' ? +inp.value : inp.value; markReq(inp, f); onChange(f.k); };
   }
   if (f.req && !String(values[f.k] ?? '').trim()) inp.classList.add('invalid');
+  if (f.format) {
+    wrap.append(formattingToolbar(inp, f.format));
+    if (f.type === 'textarea') inp.rows = f.k === 'body' ? 12 : 3;
+  }
+  inp.id = `field-${scope}-${f.k}`;
+  lab.htmlFor = inp.id;
   wrap.append(inp);
 
   if (f.btn) {
@@ -1071,7 +1259,14 @@ const DOC_ACTIONS = {
 function renderProfile() {
   const root = $('#profileForm');
   root.innerHTML = '';
-  const onChange = () => { saveLS('profile'); scheduleCompile(); };
+  const onChange = key => {
+    saveLS('profile');
+    if (key === 'hide_formatting') {
+      document.querySelectorAll('.format-toolbar').forEach(bar => { bar.hidden = !!state.profile.hide_formatting; });
+      return;
+    }
+    scheduleCompile();
+  };
   for (const sec of PROFILE_SECTIONS) {
     const h = document.createElement('h3');
     h.textContent = sec.title;
@@ -1226,8 +1421,9 @@ function buildData() {
     D['v-vruch-sign'] = d.acq_sign || ''; D['v-vruch-fio'] = d.acq_short || d.acq_post || '';
   } else if (t === 'proverka') {
     D['v-num'] = d.num; D['v-target-title'] = d.target_title; D['v-supervision'] = d.supervision;
-    const uv = cleanWs(d.violation);
-    D['v-violation'] = uv ? uv + (/[.!?…:;]$/.test(uv) ? ' ' : '. ') + VIOLATION_TAIL : VIOLATION_TAIL;
+    const uv = (d.violation || '').trim();
+    D['v-violation'] = uv ? uv + (/[.!?…:;]$/.test(plainFormattedText(uv)) ? '' : '.')
+      + (uv.includes('\n') ? '\n' : ' ') + VIOLATION_TAIL : VIOLATION_TAIL;
     D['v-check-num'] = d.num;
     D['v-suspend-word'] = d.suspend; D['v-suspend-target'] = d.suspend_target; D['v-notify-fio'] = d.notify_fio;
     D['v-notify-pronoun'] = d.subj_sex === 'f' ? 'нее' : 'него';
@@ -1249,15 +1445,13 @@ function buildData() {
     D['v-seal-l3'] = 'БЕЗОПАСНОСТИ'; D['v-seal-l4'] = '* ГУ МВД *';
     D['v-show-seal'] = !!d.show_seal;
     D['v-has-seal-img'] = sealReady;
-  } else if (t === 'unsp') {
+  } else if (['unsp', 'uksp', 'notification'].includes(t)) {
     D['v-date-dots'] = dotsDate(d.date); D['v-doc-num'] = d.doc_num || '';
-    D['v-show-reply'] = !!(d.reply_num || d.reply_date);
-    D['v-reply-num'] = d.reply_num || ''; D['v-reply-date'] = d.reply_date ? dotsDate(d.reply_date) : '';
+    D['v-show-reply'] = !!(cleanWs(d.reply_num) || d.reply_date);
+    D['v-reply-num'] = cleanWs(d.reply_num); D['v-reply-date'] = d.reply_date ? dotsDate(d.reply_date) : '';
     D['v-addr-post'] = d.addr_post || ''; D['v-addr-rank'] = d.addr_rank || '';
     D['v-addr-fio'] = d.addr_fio || ''; D['v-appeal'] = d.appeal || 'Уважаемый';
     D['v-greet-fio'] = d.greet_fio || '';
-    D['v-points'] = d.points || '';
-    D['v-check-start'] = dotsDate(d.check_start); D['v-postan-date'] = dotsDate(d.postan_date);
     D['v-sign-post'] = p.officer_post || ''; D['v-sign-rank'] = p.officer_rank || '';
     D['v-officer-phone'] = p.officer_phone || '';
     D['v-seal-l1'] = 'ОТДЕЛ'; D['v-seal-l2'] = 'СОБСТВЕННОЙ';
@@ -1269,35 +1463,28 @@ function buildData() {
     D['v-poluch-day'] = pq.day; D['v-poluch-month-gen'] = pq.gen; D['v-poluch-year'] = pq.year;
     D['v-poluch-time'] = d.poluch_time || '';
     D['v-poluch-fio'] = d.greet_fio || '';
-    D['v-poluch-sign'] = cleanWs(d.greet_fio).split(' ')[0] || '';
-  } else if (t === 'uksp') {
-    D['v-date-dots'] = dotsDate(d.date); D['v-doc-num'] = d.doc_num || '';
-    D['v-show-reply'] = !!(d.reply_num || d.reply_date);
-    D['v-reply-num'] = d.reply_num || ''; D['v-reply-date'] = d.reply_date ? dotsDate(d.reply_date) : '';
-    D['v-addr-post'] = d.addr_post || ''; D['v-addr-rank'] = d.addr_rank || '';
-    D['v-addr-fio'] = d.addr_fio || ''; D['v-appeal'] = d.appeal || 'Уважаемый';
-    D['v-greet-fio'] = d.greet_fio || '';
-    D['v-what'] = d.what || '';
-    D['v-check-start'] = dotsDate(d.check_start); D['v-check-end'] = dotsDate(d.check_end);
-    D['v-postan-date'] = dotsDate(d.postan_date);
-    const confirmed = d.fact !== 'no';
-    D['v-fact-word'] = confirmed ? 'подтвердился' : 'не подтвердился';
-    D['v-decision-word'] = confirmed ? 'установленным' : 'неустановленным';
-    D['v-est-date'] = dotsDate(d.est_date); D['v-est-text'] = (d.est_text || '').trim();
-    D['v-has-penalty'] = !!cleanWs(d.penalty);
-    D['v-penalty'] = (d.penalty || '').trim();
-    D['v-sign-post'] = p.officer_post || ''; D['v-sign-rank'] = p.officer_rank || '';
-    D['v-officer-phone'] = p.officer_phone || '';
-    D['v-seal-l1'] = 'ОТДЕЛ'; D['v-seal-l2'] = 'СОБСТВЕННОЙ';
-    D['v-seal-l3'] = 'БЕЗОПАСНОСТИ'; D['v-seal-l4'] = '* ГУ МВД *';
-    D['v-show-sign'] = !!d.show_sign; D['v-show-seal'] = !!d.show_seal;
-    D['v-has-seal-img'] = sealReady;
-    const uq = isoParts(d.poluch_date);
-    D['v-show-poluch'] = !!d.show_poluch;
-    D['v-poluch-day'] = uq.day; D['v-poluch-month-gen'] = uq.gen; D['v-poluch-year'] = uq.year;
-    D['v-poluch-time'] = d.poluch_time || '';
-    D['v-poluch-fio'] = d.greet_fio || '';
-    D['v-poluch-sign'] = cleanWs(d.greet_fio).split(' ')[0] || '';
+    D['v-poluch-sign'] = cleanWs(plainFormattedText(d.greet_fio)).split(' ')[0] || '';
+    if (t === 'unsp') {
+      D['v-points'] = d.points || '';
+      D['v-check-start'] = dotsDate(d.check_start); D['v-postan-date'] = dotsDate(d.postan_date);
+    } else if (t === 'uksp') {
+      D['v-what'] = d.what || '';
+      D['v-check-start'] = dotsDate(d.check_start); D['v-check-end'] = dotsDate(d.check_end);
+      D['v-postan-date'] = dotsDate(d.postan_date);
+      const confirmed = d.fact !== 'no';
+      D['v-fact-word'] = confirmed ? 'подтвердился' : 'не подтвердился';
+      D['v-decision-word'] = confirmed ? 'установленным' : 'неустановленным';
+      D['v-est-date'] = dotsDate(d.est_date); D['v-est-text'] = (d.est_text || '').trim();
+      D['v-has-penalty'] = !!cleanWs(d.penalty);
+      D['v-penalty'] = (d.penalty || '').trim();
+    } else {
+      D['v-heading'] = d.heading || ''; D['v-body'] = d.body || '';
+      D['v-sign-post'] = d.sign_post || p.officer_post || '';
+      D['v-sign-rank'] = d.sign_rank || p.officer_rank || '';
+      D['v-sign-fio'] = d.sign_fio || p.officer_short || '';
+      D['v-poluch-fio'] = d.poluch_fio || '';
+      D['v-poluch-sign'] = d.poluch_sign || '';
+    }
   } else if (t === 'protokol_oprosa') {
     D['v-place'] = d.place || '';
     D['v-day'] = dp.day;
@@ -1341,7 +1528,7 @@ function buildData() {
     D['v-appl-sign'] = d.appl_sign || '';
     D['v-num'] = d.num || '';
     D['v-accept-time'] = d.accept_time || '';
-    D['v-brief'] = cleanWs(d.brief) || cleanWs(d.content).slice(0, 140);
+    D['v-brief'] = cleanWs(d.brief) || cleanWs(plainFormattedText(d.content)).slice(0, 140);
     D['v-show-accept'] = !!d.show_accept; D['v-show-seal'] = !!d.show_seal;
     D['v-has-seal-img'] = sealReady;
   }
@@ -1350,13 +1537,26 @@ function buildData() {
   if (missing.length) console.warn('Нет данных для ключей:', missing.join(', '));
   return D;
 }
-function dataLines(D) {
-  return Object.entries(D).map(([k, v]) => {
+function dataLines(D, tpl = workTpl()) {
+  const lines = Object.entries(D).map(([k, v]) => {
     if (typeof v === 'boolean') return `#let ${k} = ${v}`;
     if (typeof v === 'number') return `#let ${k} = ${Number.isFinite(v) ? v : 0}`;
     if (k === 'v-sign-width' && typeof v === 'string' && /^[0-9.]+mm$/.test(v)) return `#let ${k} = ${v}`;
     return `#let ${k} = ${escTyp(v)}`;
-  }).join('\n');
+  });
+  const modes = Object.fromEntries(Object.entries(TEXT_FIELDS[tpl] || {}).map(([field, mode]) => ['v-' + field.replace(/_/g, '-'), mode]));
+  if (tpl === 'trebovanie') Object.assign(modes, {'v-vruch-sign':'inline', 'v-vruch-fio':'inline'});
+  if (tpl === 'unsp' || tpl === 'uksp') modes['v-poluch-fio'] = 'inline';
+  const formatted = Object.entries(modes).flatMap(([key, mode]) => {
+    const value = D[key];
+    return typeof value === 'string' && value.trim()
+      ? [`${escTyp(key)}: ${formattedTypst(value, mode === 'blocks')}`] : [];
+  });
+  if (formatted.length) {
+    lines.push(`#let osb-formatted = (${formatted.join(',\n')},)`);
+    lines.push('#let osb-format(key, fallback) = osb-formatted.at(key, default: fallback)');
+  }
+  return lines.join('\n');
 }
 function injectData(tpl, lines) {
   return tpl.replace(/\/\/ <OSB-DATA>\n[\s\S]*?\n\/\/ <\/OSB-DATA>/, () => `// <OSB-DATA>\n${lines}\n// </OSB-DATA>`);
@@ -1368,7 +1568,8 @@ let sealReady = false;
 let compileSeq = 0, compiling = false, queued = false, compilePromise = null;
 let compiledSnapshot = null;
 function documentVersion() {
-  return JSON.stringify([state.active, workTpl(), workData(), state.profile]);
+  const {hide_formatting, ...profile} = state.profile;
+  return JSON.stringify([state.active, workTpl(), workData(), profile]);
 }
 function invalidateExport() {
   compiledSnapshot = null;
@@ -1755,7 +1956,7 @@ function renderCasesMenu() {
   free.innerHTML = '';
   const fm = document.createElement('span');
   fm.className = 'cm-main';
-  fm.innerHTML = `<div class="cm-title">📄 Вне дел (просто документы)</div><div class="cm-sub">7 черновиков без привязки к делу</div>`;
+  fm.innerHTML = `<div class="cm-title">📄 Вне дел (просто документы)</div><div class="cm-sub">${Object.keys(TPL_NAMES).length} черновиков без привязки к делу</div>`;
   free.append(fm);
   free.onclick = () => { setActiveFree(); hideCasesMenu(); };
   m.append(free);

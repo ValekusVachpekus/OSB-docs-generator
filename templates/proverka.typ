@@ -46,6 +46,9 @@
 )
 #set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
 
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
 // <OSB-DATA>
 #let v-day = "2"
 #let v-month-gen = "апреля"
@@ -116,7 +119,7 @@
   columns: (1fr, 1fr, 1fr),
   align: (left, center, right),
   [« #v-day » #v-month-gen #v-year г.],
-  [#v-city],
+  [#osb-format("v-city", v-city)],
   [№ #v-num]
 )
 
@@ -129,7 +132,7 @@
   align(left + top)[
     #set par(first-line-indent: 0pt, justify: false)
     #set text(size: 11pt)
-    О назначении и проведении служебной проверки в отношении #v-target-title
+    О назначении и проведении служебной проверки в отношении #osb-format("v-target-title", v-target-title)
   ],
   rotate(-1.5deg)[
     #move(dx: 5pt, dy: -10pt)[
@@ -173,20 +176,20 @@
 #v(1.5em)
 
 // Преамбула
-#v-supervision
+#osb-format("v-supervision", v-supervision)
 #v(1em)
 #align(center)[#text(weight: "bold")[У С Т А Н О В И Л:]]
 #v(0.5em)
 
-#v-violation —
+#osb-format("v-violation", v-violation) —
 #v(1em)
 #align(center)[#text(weight: "bold")[П О С Т А Н О В И Л:]]
 #v(0.5em)
 
 #set enum(indent: 1.25cm)
-+ Завести дело оперативного учета №#v-check-num по факту возможного нарушения служебной дисциплины #v-notify-fio.
-+ На время проведения служебной проверки #v-suspend-target #v-suspend-word от исполнения должностных обязанностей.
-+ Уведомить #v-notify-fio о назначении в отношении #v-notify-pronoun служебной проверки
++ Завести дело оперативного учета №#v-check-num по факту возможного нарушения служебной дисциплины #osb-format("v-notify-fio", v-notify-fio).
++ На время проведения служебной проверки #osb-format("v-suspend-target", v-suspend-target) #v-suspend-word от исполнения должностных обязанностей.
++ Уведомить #osb-format("v-notify-fio", v-notify-fio) о назначении в отношении #v-notify-pronoun служебной проверки
 
 #v(3em)
 // Подпись внизу документа

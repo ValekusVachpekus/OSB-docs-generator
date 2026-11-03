@@ -46,6 +46,9 @@
 )
 #set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
 
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
 // <OSB-DATA>
 #let v-date-dots = "15.10.2026"
 #let v-doc-num = "0031-СП"
@@ -110,15 +113,18 @@
     г. Арзамас, ул. Севастопольская, д. 7, \
     Нижегородская область, тел. #v-officer-phone \
     #v-date-dots № #v-doc-num \
+    #if v-show-reply [
+      На #if v-reply-num != "" [№ #v-reply-num] else [документ]#if v-reply-date != "" [ от #v-reply-date] \
+    ]
     Запрос в порядке п. 2 ч. 3 ст. 28 №1-ФЗ
   ],
   align(left + top)[
     #set par(first-line-indent: 0pt, justify: false)
     #set text(size: 11pt)
     #v(2em)
-    #v-addr-post \
-    #v-addr-rank \
-    #v-addr-fio \
+    #osb-format("v-addr-post", v-addr-post) \
+    #osb-format("v-addr-rank", v-addr-rank) \
+    #osb-format("v-addr-fio", v-addr-fio) \
     #v(1em)
     #if v-show-copy [
       #rotate(-1.5deg)[
@@ -156,27 +162,22 @@
 
 #v(0.5em)
 
-// --- Ответ на входящий ---
-#if v-show-reply [
-  #align(right)[на № #v-reply-num от #v-reply-date]
-]
-
 #v(1em)
-#align(center)[#text(weight: "bold")[#v-appeal #v-greet-fio!]]
+#align(center)[#text(weight: "bold")[#v-appeal #osb-format("v-greet-fio", v-greet-fio)!]]
 #v(0.5em)
 
-Настоящим уведомляю Вас о том, что в отношении Вас проводилась служебная проверка в связи с поступлением сведений о возможном нарушении вами требований Федерального закона №1-ФЗ «О полиции» и Устава органов внутренних дел, выразившимся в #v-what.
+Настоящим уведомляю Вас о том, что в отношении Вас проводилась служебная проверка в связи с поступлением сведений о возможном нарушении вами требований Федерального закона №1-ФЗ «О полиции» и Устава органов внутренних дел, выразившимся в #osb-format("v-what", v-what).
 
 Проверка проводилась с #v-check-start по #v-check-end года на основании постановления о назначении служебной проверки от #v-postan-date и в соответствии со ст. 28 Федерального закона № 1-ФЗ «О полиции».
 
-По результатам проведённой проверки факт нарушения #v-fact-word: установлено, что #v-est-date #v-est-text.
+По результатам проведённой проверки факт нарушения #v-fact-word: установлено, что #v-est-date #osb-format("v-est-text", v-est-text).
 
 На основании изложенного, руководствуясь ст. 28 Федерального закона № 1-ФЗ «О полиции», принято решение:
 
 #set enum(indent: 1.25cm)
 + Служебную проверку в отношении Вас завершить, признав факт нарушения #v-decision-word.
 #if v-has-penalty [
-  + Привлечь к дисциплинарной ответственности в виде #v-penalty.
+  + Привлечь к дисциплинарной ответственности в виде #osb-format("v-penalty", v-penalty).
 ]
 
 В случае несогласия с принятым решением Вы вправе обжаловать его вышестоящему должностному лицу либо в суд в установленном законодательством порядке.
@@ -245,7 +246,7 @@
           Дата: « #v-poluch-day » #v-poluch-month-gen #v-poluch-year г. \
           Время: #v-poluch-time \
           Подпись получившего: #v-poluch-sign \
-          ФИО: #v-poluch-fio
+          ФИО: #osb-format("v-poluch-fio", v-poluch-fio)
         ]
       )
     ]

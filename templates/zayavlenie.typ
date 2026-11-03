@@ -46,6 +46,9 @@
 )
 #set par(justify: true, first-line-indent: 1.25cm, leading: 0.65em)
 
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
 // <OSB-DATA>
 #let v-day = "12"
 #let v-month-gen = "октября"
@@ -98,26 +101,26 @@
 #align(right)[
   #set par(first-line-indent: 0pt, justify: false)
   #set text(size: 11pt)
-  #v-boss-to \
+  #osb-format("v-boss-to", v-boss-to) \
   #v(0.3em)
-  от #v-appl-fio \
-  #if v-appl-birth != "" [дата рождения: #v-appl-birth \ ]
-  #if v-appl-address != "" [адрес: #v-appl-address \ ]
+  от #osb-format("v-appl-fio", v-appl-fio) \
+  #if v-appl-birth != "" [дата рождения: #osb-format("v-appl-birth", v-appl-birth) \ ]
+  #if v-appl-address != "" [адрес: #osb-format("v-appl-address", v-appl-address) \ ]
   #if v-appl-phone != "" [тел.: #v-appl-phone \ ]
-  #if v-appl-passport != "" [паспорт: #v-appl-passport]
+  #if v-appl-passport != "" [паспорт: #osb-format("v-appl-passport", v-appl-passport)]
 ]
 
 #v(0.5em)
 
-Я, #v-appl-fio, сообщаю следующее:
+Я, #osb-format("v-appl-fio", v-appl-fio), сообщаю следующее:
 
-В отношении: #v-target.
+В отношении: #osb-format("v-target", v-target).
 #if v-event-date != "" [Дата события: #v-event-date.]
-#if v-event-place != "" [Место события: #v-event-place.]
+#if v-event-place != "" [Место события: #osb-format("v-event-place", v-event-place).]
 
-#v-content
+#osb-format("v-content", v-content)
 
-#v-request.
+#osb-format("v-request", v-request).
 
 #v(0.5em)
 
@@ -128,7 +131,7 @@
 #grid(
   columns: (1fr, 1fr),
   [«#v-day» #v-month-gen #v-year г.],
-  [#if v-appl-sign == "" [#box(width: 100%, stroke: (bottom: 0.5pt + black))] else [#box(width: 100%, stroke: (bottom: 0.5pt + black))[#v-appl-sign / #v-appl-fio]]]
+  [#if v-appl-sign == "" [#box(width: 100%, stroke: (bottom: 0.5pt + black))] else [#box(width: 100%, stroke: (bottom: 0.5pt + black))[#osb-format("v-appl-sign", v-appl-sign) / #osb-format("v-appl-fio", v-appl-fio)]]]
 )
 #align(right)[
   #set text(size: 10pt)
@@ -204,12 +207,12 @@
       #align(center)[№ #v-num/ТКТУ]
       #line(length: 100%, stroke: 0.5pt)
       #v(2pt)
-      Принято от: #v-appl-fio
+      Принято от: #osb-format("v-appl-fio", v-appl-fio)
       #text(size: 7.5pt, fill: gray)[(Ф. И. О. заявителя)]
       #v(2pt)
       #line(length: 100%, stroke: 0.5pt)
       #v(2pt)
-      Краткое содержание: #v-brief
+      Краткое содержание: #osb-format("v-brief", v-brief)
       #v(2pt)
       #line(length: 100%, stroke: 0.5pt)
       #v(2pt)

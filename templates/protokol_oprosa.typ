@@ -109,6 +109,9 @@
   ]
 ]
 
+// Обычный текст при локальной компиляции; приложение подставляет форматированные поля.
+#let osb-format(key, fallback) = fallback
+
 // <OSB-DATA>
 #let v-place = "г. Арзамас, ул. Пионерская, д. 1"
 #let v-day = "29"
@@ -169,7 +172,7 @@
 #grid(
   columns: (1fr, auto),
   align: (left, left),
-  [Место составления: #v-place],
+  [Место составления: #osb-format("v-place", v-place)],
   [« #v-day » #v-month-gen 20#v-year2 г.]
 )
 
@@ -197,24 +200,24 @@
 // --- Анкета (п. 1–12) ---
 #set par(first-line-indent: 0pt)
 
-#item("1. Фамилия, имя, отчество", v-fio)
-#item("2. Дата рождения", v-birth-date)
-#item("3. Место рождения", v-birth-place)
-#item("4. Место жительства и (или) регистрации", v-address)
+#item("1. Фамилия, имя, отчество", osb-format("v-fio", v-fio))
+#item("2. Дата рождения", osb-format("v-birth-date", v-birth-date))
+#item("3. Место рождения", osb-format("v-birth-place", v-birth-place))
+#item("4. Место жительства и (или) регистрации", osb-format("v-address", v-address))
 #item("5. Номер контактного телефона:", v-phone)
-#item("6. Гражданство", v-citizenship)
-#item("7. Образование", v-education)
-#item("8. Семейное положение, состав семьи", v-family, blanks: 2)
-#item("9. Место работы или учебы", v-work, blanks: 2)
-#item("10. Отношение к воинской обязанности", v-military)
-#item("11. Наличие судимости", v-conviction)
+#item("6. Гражданство", osb-format("v-citizenship", v-citizenship))
+#item("7. Образование", osb-format("v-education", v-education))
+#item("8. Семейное положение, состав семьи", osb-format("v-family", v-family), blanks: 2)
+#item("9. Место работы или учебы", osb-format("v-work", v-work), blanks: 2)
+#item("10. Отношение к воинской обязанности", osb-format("v-military", v-military))
+#item("11. Наличие судимости", osb-format("v-conviction", v-conviction))
 #align(center)[
   #set text(size: 10pt)
   (по какой статье УК РФ)
 ]
 
-#item("11. Паспорт или иной документ, удостоверяющий личность опрашиваемого", v-passport, blanks: 2)
-#item("12. Иные данные о личности опрашиваемого", v-other, blanks: 3)
+#item("11. Паспорт или иной документ, удостоверяющий личность опрашиваемого", osb-format("v-passport", v-passport), blanks: 2)
+#item("12. Иные данные о личности опрашиваемого", osb-format("v-other", v-other), blanks: 3)
 
 #set par(first-line-indent: 1.25cm)
 
@@ -234,20 +237,20 @@
 #text(weight: "bold")[Об уголовной ответственности за дачу заведомо ложных показаний по ст. 61 УК предупрежден.]
 
 #v(0.8em)
-#sigline("Опрашиваемый", v-sig)
+#sigline("Опрашиваемый", osb-format("v-sig", v-sig))
 
 #pagebreak()
 
 // --- Вопросы и ответы (печатается первые v-qa-count пар) ---
-#let qa-qs = (v-q1, v-q2, v-q3, v-q4, v-q5, v-q6, v-q7, v-q8, v-q9)
-#let qa-as = (v-a1, v-a2, v-a3, v-a4, v-a5, v-a6, v-a7, v-a8, v-a9)
+#let qa-qs = (osb-format("v-q1", v-q1), osb-format("v-q2", v-q2), osb-format("v-q3", v-q3), osb-format("v-q4", v-q4), osb-format("v-q5", v-q5), osb-format("v-q6", v-q6), osb-format("v-q7", v-q7), osb-format("v-q8", v-q8), osb-format("v-q9", v-q9))
+#let qa-as = (osb-format("v-a1", v-a1), osb-format("v-a2", v-a2), osb-format("v-a3", v-a3), osb-format("v-a4", v-a4), osb-format("v-a5", v-a5), osb-format("v-a6", v-a6), osb-format("v-a7", v-a7), osb-format("v-a8", v-a8), osb-format("v-a9", v-a9))
 #for i in range(calc.min(calc.max(v-qa-count, 0), 9)) [#qablock(qa-qs.at(i), qa-as.at(i))]
 
 // --- Заверение ---
 Подписавший ниже гражданин подтверждает, что ответы на вопросы с его слов записаны верно, подтверждает, что дополнений к написанному не имеет.
 
 #v(1em)
-#sigline("Опрашиваемый", v-sig)
+#sigline("Опрашиваемый", osb-format("v-sig", v-sig))
 
 #v(2em)
 
